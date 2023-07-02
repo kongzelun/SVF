@@ -29,6 +29,9 @@ SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 LLVMHome="llvm-14.0.0.obj"
 Z3Home="z3.obj"
 
+# Set LLVM_DIR and Z3_DIR to system-installed location
+LLVM_DIR="/usr"
+Z3_DIR="/usr"
 
 # Downloads $1 (URL) to $2 (target destination) using wget or curl,
 # depending on OS.
@@ -221,7 +224,10 @@ BUILD_DIR="./${BUILD_TYPE}-build"
 
 rm -rf "${BUILD_DIR}"
 mkdir "${BUILD_DIR}"
-cmake -D CMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}" \
+cmake -DCMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}"  \
+    -DCMAKE_CXX_COMPILER=$LLVM_DIR/bin/clang++   \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON           \
+    -DLLVM_DIR=$LLVM_DIR                         \
     -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
     -DSVF_SANITIZE="${SVF_SANITIZER}"            \
     -S "${SVFHOME}" -B "${BUILD_DIR}"

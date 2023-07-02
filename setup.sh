@@ -13,6 +13,10 @@ SVF_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1; pwd -P)"
 export SVF_DIR
 echo "SVF_DIR=$SVF_DIR"
 
+# Set LLVM_DIR and Z3_DIR to system-installed location
+LLVM_DIR="/usr"
+Z3_DIR="/usr"
+
 function set_llvm {
     # LLVM_DIR already set
     [[ -n "$LLVM_DIR" ]] && return 0
@@ -27,7 +31,7 @@ function set_llvm {
 
 if set_llvm; then
     export LLVM_DIR
-    export PATH="$LLVM_DIR/bin:$PATH"
+    # export PATH="$LLVM_DIR/bin:$PATH"
     echo "LLVM_DIR=$LLVM_DIR"
 else
     echo "- LLVM_DIR not set, probably system-wide installation"
@@ -65,6 +69,6 @@ fi
 
 Build="${PTAOBJTY}-build"
 
-export PATH=$LLVM_DIR/bin:$PATH
+# export PATH=$LLVM_DIR/bin:$PATH
 PTABIN=$SVF_DIR/$Build/bin
 export PATH=$PTABIN:$PATH
