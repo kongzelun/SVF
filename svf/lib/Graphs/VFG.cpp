@@ -190,7 +190,7 @@ const std::string BranchVFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "BranchVFGNode ID: " << getId() << ",\n";
-    rawstr << "PAGEdge: [" << brstmt->toString() << "\n";
+    rawstr << "PAGEdge: [" << brstmt->toString();
     return rawstr.str();
 }
 

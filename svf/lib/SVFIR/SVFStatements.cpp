@@ -173,12 +173,12 @@ const std::string BranchStmt::toString() const
     std::string str;
     std::stringstream rawstr(str);
     if(isConditional())
-        rawstr << "BranchStmt: [Condition Var" <<  getCondition()->getId() << "]\n";
+        rawstr << "BranchStmt: [Condition Var" <<  getCondition()->getId() << "]";
     else
-        rawstr << "BranchStmt: [" <<  " Unconditional branch" << "]\n";
+        rawstr << "BranchStmt: [" <<  "Unconditional branch" << "]";
 
     for(u32_t i = 0; i < getNumSuccessors(); i++)
-        rawstr << "Successor " << i << " ICFGNode" << getSuccessor(i)->getId() << "   ";
+        rawstr << " Successor " << i << " ICFGNode" << getSuccessor(i)->getId() << "]";
 
     if (Options::ShowSVFIRValue())
     {
