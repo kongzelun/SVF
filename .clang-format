@@ -1,6 +1,8 @@
-BasedOnStyle: Microsoft
-PointerAlignment: Left
-IndentPPDirectives: AfterHash
-AllowShortFunctionsOnASingleLine: Empty
-ColumnLimit: 80
-AccessModifierOffset: -4
+UseTab: Never
+IndentWidth: 4
+ColumnLimit: 0
+SortIncludes: Never
+BreakBeforeBraces: Allman
+# Alignment
+AlignConsecutiveDeclarations: AcrossComments
+AlignConsecutiveMacros: AcrossComments
