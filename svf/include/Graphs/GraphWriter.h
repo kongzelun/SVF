@@ -307,8 +307,8 @@ public:
         if (DestNodePort > 64) DestNodePort = 64;  // Targeting the truncated part?
 
         O << "\tNode" << SrcNodeID;
-        if (SrcNodePort >= 0)
-            O << ":s" << SrcNodePort;
+        // if (SrcNodePort >= 0)
+        //     O << ":s" << SrcNodePort;
         O << " -> Node" << DestNodeID;
         if (DestNodePort >= 0 && DTraits.hasEdgeDestLabels())
             O << ":d" << DestNodePort;
