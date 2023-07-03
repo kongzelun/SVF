@@ -106,7 +106,7 @@ const std::string ValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ValVar ID: " << getId();
+    rawstr << "ValVar ID: " << getId() << ";";
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";
@@ -119,7 +119,7 @@ const std::string ObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ObjVar ID: " << getId();
+    rawstr << "ObjVar ID: " << getId() << ";";
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";

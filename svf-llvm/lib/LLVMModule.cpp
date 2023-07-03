@@ -229,19 +229,25 @@ void LLVMModuleSet::createSVFDataStructure()
                     }
 
                     // Set instruction's string representation
-                    if (inst.hasName() && !inst.getName().empty())
-                    {
-                        svfInst->setName(inst.getName().str());
-                    }
-                    else
-                    {
-                        std::string str = LLVMUtil::llvmToString(inst);
-                        auto it = str.begin(), ite = str.end();
-                        while (it != ite && std::isspace(*it))
-                            ++it;
-                        // 0xf (15) is the max length a local string can hold
-                        svfInst->setName({it, std::min(it + 0xf, ite)});
-                    }
+                    // if (inst.hasName() && !inst.getName().empty())
+                    // {
+                    //     svfInst->setName(inst.getName().str());
+                    // }
+                    // else
+                    // {
+                    //     std::string str = LLVMUtil::llvmToString(inst);
+                    //     auto it = str.begin(), ite = str.end();
+                    //     while (it != ite && std::isspace(*it))
+                    //         ++it;
+                    //     // 0xf (15) is the max length a local string can hold
+                    //     svfInst->setName({it, std::min(it + 0xf, ite)});
+                    // }
+                    std::string str = LLVMUtil::llvmToString(inst);
+                    auto it = str.begin(), ite = str.end();
+                    while (it != ite && std::isspace(*it))
+                        ++it;
+                    svfInst->setName({it, ite});
+
                     svfBB->addInstruction(svfInst);
                     addInstructionMap(&inst, svfInst);
                 }
