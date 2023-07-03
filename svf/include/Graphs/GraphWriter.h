@@ -137,8 +137,10 @@ public:
         else
             O << "digraph unnamed {\n";
 
-        if (DTraits.renderGraphFromBottomUp())
-            O << "\trankdir=\"BT\";\n";
+        // if (DTraits.renderGraphFromBottomUp())
+        //     O << "\trankdir=\"BT\";\n";
+
+        O << "\trankdir=\"LR\";\n";
 
         if (!Title.empty())
             O << "\tlabel=\"" << DOT::EscapeStr(Title) << "\";\n";
