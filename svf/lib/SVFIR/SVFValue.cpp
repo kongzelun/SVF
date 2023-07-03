@@ -246,7 +246,7 @@ SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
 
 void SVFFunction::print(OutStream& os) const
 {
-    os << "Function [" << getName() << "];";
+    os << "Function [" << getName() << "]";
 }
 
 void SVFBasicBlock::print(OutStream& os) const
@@ -262,28 +262,28 @@ void SVFInstruction::print(OutStream& os) const
     os << '`' << getName() << "` in [" << getFunction()->getName() << "]";
     const std::string& bbName = getParent()->getName();
     if (bbName.size())
-        os << " BB `" << bbName << "`;";
+        os << " BB `" << bbName << "`";
 }
 
 void SVFConstant::print(OutStream& os) const
 {
-    os << "Const " << getName() << ";";
+    os << "Const " << getName();
 }
 
 void SVFGlobalValue::print(OutStream& os) const
 {
-    os << "`@" << getName() << "`;";
+    os << "`@" << getName() << "`";
 }
 
 void SVFArgument::print(OutStream& os) const
 {
-    os << "Argument `%" << getName() << "` of `" << getParent()->getName() << "`;";
+    os << "Argument `%" << getName() << "` of `" << getParent()->getName() << "`";
 }
 
 void SVFConstantData::print(OutStream& os) const
 {
     // N.B. Haven't found instance of this class so far
-    os << "ConstData " << getName() << ";";
+    os << "ConstData " << getName();
 }
 
 void SVFConstantInt::print(OutStream& os) const
@@ -298,7 +298,6 @@ void SVFConstantInt::print(OutStream& os) const
         os << getSExtValue();
     else
         os << getZExtValue();
-    os << ";";
 }
 
 void SVFConstantFP::print(OutStream& os) const
@@ -307,7 +306,6 @@ void SVFConstantFP::print(OutStream& os) const
     if (!getName().empty())
         os << getName() << ' ';
     os << *getType() << ' ' << getFPValue();
-    os << ";";
 }
 
 void SVFConstantNullPtr::print(OutStream& os) const
@@ -315,7 +313,6 @@ void SVFConstantNullPtr::print(OutStream& os) const
     os << "ConstNull " << *getType();
     if (!getName().empty())
         os << ' ' << getName();
-    os << ";";
 }
 
 void SVFBlackHoleValue::print(OutStream& os) const
@@ -323,15 +320,14 @@ void SVFBlackHoleValue::print(OutStream& os) const
     os << "BlackHole " << *getType();
     if (!getName().empty())
         os << ' ' << getName();
-    os << ";";
 }
 
 void SVFOtherValue::print(OutStream& os) const
 {
-    os << "OtherVal " << getName() << ";";
+    os << "OtherVal " << getName();
 }
 
 void SVFMetadataAsValue::print(OutStream& os) const
 {
-    os << "MetaDataVal " << getName() << ";";
+    os << "MetaDataVal " << getName();
 }

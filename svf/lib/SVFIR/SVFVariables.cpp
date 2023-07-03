@@ -106,10 +106,10 @@ const std::string ValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ValVar ID: " << getId() << ";";
+    rawstr << "ValVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
-        rawstr << "\n";
+        rawstr << ",\n";
         rawstr << value->toString();
     }
     return rawstr.str();
@@ -119,10 +119,10 @@ const std::string ObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ObjVar ID: " << getId() << ";";
+    rawstr << "ObjVar ID: " << getId();
     if (Options::ShowSVFIRValue())
     {
-        rawstr << "\n";
+        rawstr << ",\n";
         rawstr << value->toString();
     }
     return rawstr.str();
@@ -135,7 +135,7 @@ const std::string GepValVar::toString() const
     rawstr << "GepValVar ID: " << getId() << " with offset_" + std::to_string(getConstantFieldIdx());
     if (Options::ShowSVFIRValue())
     {
-        rawstr << "\n";
+        rawstr << ",\n";
         rawstr << value->toString();
     }
     return rawstr.str();
@@ -148,7 +148,7 @@ const std::string GepObjVar::toString() const
     rawstr << "GepObjVar ID: " << getId() << " with offset_" + std::to_string(apOffset);
     if (Options::ShowSVFIRValue())
     {
-        rawstr << "\n";
+        rawstr << ",\n";
         rawstr << value->toString();
     }
     return rawstr.str();
@@ -161,7 +161,7 @@ const std::string FIObjVar::toString() const
     rawstr << "FIObjVar ID: " << getId() << " (base object)";
     if (Options::ShowSVFIRValue())
     {
-        rawstr << "\n";
+        rawstr << ",\n";
         rawstr << value->toString();
     }
     return rawstr.str();
