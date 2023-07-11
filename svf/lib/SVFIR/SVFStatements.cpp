@@ -222,7 +222,7 @@ const std::string GepStmt::toString() const
     rawstr << "GepStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
     if (Options::ShowSVFIRValue())
     {
-        rawstr << ",n";
+        rawstr << ",\n";
         rawstr << getValue()->toString();
     }
     return rawstr.str();
