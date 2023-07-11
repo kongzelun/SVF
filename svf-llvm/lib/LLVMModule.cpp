@@ -72,19 +72,6 @@ using namespace SVF;
 LLVMModuleSet* LLVMModuleSet::llvmModuleSet = nullptr;
 bool LLVMModuleSet::preProcessed = false;
 
-/// Helper function to summarize a long string
-static void shortenLongInfo(std::string& info, unsigned bestLen = 15)
-{
-    if (info.size() <= bestLen)
-        return;
-    // If it is of form "name = value", keep on the name part
-    size_t index = info.find(" =");
-    if (index != std::string::npos)
-        info.resize(index);
-    else
-        info.resize(bestLen);
-}
-
 LLVMModuleSet::LLVMModuleSet()
     : symInfo(SymbolTableInfo::SymbolInfo()),
       svfModule(SVFModule::getSVFModule()), cxts(nullptr)
@@ -1015,29 +1002,6 @@ SVFConstant* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
         SVFConstant* svfoc = new SVFConstant(getSVFType(oc->getType()));
         svfModule->addConstant(svfoc);
         addOtherConstantMap(oc,svfoc);
-
-        // Setting up string representation.
-        // Usually is a bitcast from a global variable's address
-        std::string str = LLVMUtil::llvmToString(*oc);
-        const char* spaceChars = " \t\n\v\f\r";
-        size_t space = str.find_first_of(spaceChars);
-        const int maxLen = 62; // Arbitrary chosen small number that fits string
-        // within one line
-        if (space != str.npos &&
-                (space = str.find_first_of(spaceChars, space + 1)) != str.npos)
-        {
-            size_t name = str.find('@', space);
-            str.erase(space, name - space);
-        }
-        else if (str.size() > maxLen)
-        {
-            int extra = str.size() - maxLen;
-            int half = maxLen / 2;
-            str[half++] = '~';
-            str.erase(half, half + extra);
-        }
-        svfoc->setName(std::move(str));
-
         return svfoc;
     }
 }
@@ -1055,14 +1019,6 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
             SVFUtil::isa<MetadataAsValue>(ov)
             ? new SVFMetadataAsValue(getSVFType(ov->getType()))
             : new SVFOtherValue(getSVFType(ov->getType()));
-        if (ov->hasName())
-            svfov->setName(ov->getName().str());
-        else
-        {
-            auto str = LLVMUtil::llvmToString(*ov);
-            shortenLongInfo(str, 30);
-            svfov->setName(std::move(str));
-        }
         svfModule->addOtherValue(svfov);
         addOtherValueMap(ov,svfov);
         return svfov;

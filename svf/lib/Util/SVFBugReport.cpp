@@ -43,7 +43,9 @@ const std::map<GenericBug::BugType, std::string> GenericBug::BugType2Str =
     {GenericBug::PARTIALLEAK, "Partial Leak"},
     {GenericBug::FILENEVERCLOSE, "File Never Close"},
     {GenericBug::FILEPARTIALCLOSE, "File Partial Close"},
-    {GenericBug::DOUBLEFREE, "Double Free"}
+    {GenericBug::DOUBLEFREE, "Double Free"},
+    {GenericBug::FULLNULLPTRDEREFERENCE, "Full Null Ptr Dereference"},
+    {GenericBug::PARTIALNULLPTRDEREFERENCE, "Partial Null Ptr Dereference"}
 };
 
 const std::string GenericBug::getLoc() const
@@ -248,6 +250,30 @@ void FilePartialCloseBug::printBugToTerminal() const
         SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << (*eventIt).getEventDescription() << ") \n";
     }
     SVFUtil::errs() << "\n";
+}
+
+cJSON *FullNullPtrDereferenceBug::getBugDescription() const
+{
+    cJSON *bugDescription = cJSON_CreateObject();
+    return bugDescription;
+}
+
+void FullNullPtrDereferenceBug::printBugToTerminal() const
+{
+    SVFUtil::errs() << SVFUtil::bugMsg2("\t FullNullPtrDereference :") <<  " dereference at : ("
+                    << GenericBug::getLoc() << ")\n";
+}
+
+cJSON *PartialNullPtrDereferenceBug::getBugDescription() const
+{
+    cJSON *bugDescription = cJSON_CreateObject();
+    return bugDescription;
+}
+
+void PartialNullPtrDereferenceBug::printBugToTerminal() const
+{
+    SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialNullPtrDereference :") <<  " dereference at : ("
+                    << GenericBug::getLoc() << ")\n";
 }
 
 const std::string SVFBugEvent::getFuncName() const

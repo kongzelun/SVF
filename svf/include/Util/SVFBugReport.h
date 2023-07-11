@@ -83,7 +83,7 @@ public:
     typedef std::vector<SVFBugEvent> EventStack;
 
 public:
-    enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
+    enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE, FULLNULLPTRDEREFERENCE, PARTIALNULLPTRDEREFERENCE};
     static const std::map<GenericBug::BugType, std::string> BugType2Str;
 
 protected:
@@ -253,6 +253,38 @@ public:
     }
 };
 
+class FullNullPtrDereferenceBug : public GenericBug
+{
+public:
+    FullNullPtrDereferenceBug(const EventStack &bugEventStack):
+        GenericBug(GenericBug::FULLNULLPTRDEREFERENCE, bugEventStack) { }
+
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::FULLNULLPTRDEREFERENCE;
+    }
+};
+
+class PartialNullPtrDereferenceBug : public GenericBug
+{
+public:
+    PartialNullPtrDereferenceBug(const EventStack &bugEventStack):
+        GenericBug(GenericBug::PARTIALNULLPTRDEREFERENCE, bugEventStack) { }
+
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::PARTIALNULLPTRDEREFERENCE;
+    }
+};
+
 class SVFBugReport
 {
 public:
@@ -338,6 +370,18 @@ public:
         case GenericBug::PARTIALBUFOVERFLOW:
         {
             newBug = new PartialBufferOverflowBug(eventStack, allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound);
+            bugSet.insert(newBug);
+            break;
+        }
+        case GenericBug::FULLNULLPTRDEREFERENCE:
+        {
+            newBug = new FullNullPtrDereferenceBug(eventStack);
+            bugSet.insert(newBug);
+            break;
+        }
+        case GenericBug::PARTIALNULLPTRDEREFERENCE:
+        {
+            newBug = new PartialNullPtrDereferenceBug(eventStack);
             bugSet.insert(newBug);
             break;
         }
