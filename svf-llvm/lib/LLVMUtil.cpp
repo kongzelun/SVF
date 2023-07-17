@@ -1053,7 +1053,7 @@ std::string SVFValue::toString() const
         if (llvmVal)
         {
             rawstr << *llvmVal;
-            rawstr << ",\n" << "Function: `" << inst->getFunction()->getName() << "` BasicBlock: `" << inst->getParent()->getName() << "`";
+            rawstr << " " << ", Function[" << inst->getFunction()->getName() << "], BasicBlock: [" << inst->getParent()->getName() << "]";
         }
         else
             rawstr << " No llvmVal found";
