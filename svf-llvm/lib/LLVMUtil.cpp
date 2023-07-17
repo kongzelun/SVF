@@ -525,7 +525,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
-        rawstr << "Glob ";
+        rawstr << "Glob";
         NamedMDNode* CU_Nodes = gvar->getParent()->getNamedMetadata("llvm.dbg.cu");
         if(CU_Nodes)
         {
@@ -563,8 +563,8 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     rawstr << " }";
 
-    if(rawstr.str()=="{  }")
-        return "";
+    // if(rawstr.str()=="{  }")
+    //     return "";
     return rawstr.str();
 }
 
@@ -1047,6 +1047,17 @@ std::string SVFValue::toString() const
     {
         rawstr << "BasicBlock: " << bb->getName() << " ";
     }
+    else if (const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(this))
+    {
+        auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+        if (llvmVal)
+        {
+            rawstr << *llvmVal;
+            rawstr << ",\n" << "Function: `" << inst->getFunction()->getName() << "` BasicBlock: `" << inst->getParent()->getName() << "`";
+        }
+        else
+            rawstr << " No llvmVal found";
+    }
     else
     {
         auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
@@ -1055,7 +1066,7 @@ std::string SVFValue::toString() const
         else
             rawstr << " No llvmVal found";
     }
-    rawstr << this->getSourceLoc();
+    rawstr << ",\n" << this->getSourceLoc();
     return rawstr.str();
 }
 
