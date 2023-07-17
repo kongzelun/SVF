@@ -343,7 +343,8 @@ const std::string FormalRetVFGNode::toString() const
     std::stringstream rawstr(str);
     rawstr << "FormalRetVFGNode ID: " << getId() << ",\n";
     rawstr << "Function[" << getFun()->getName() << "] ";
-    rawstr << param->toString() << "\n";
+    rawstr << param->toString();
+    rawstr << ",\n" << "(none)";
     return rawstr.str();
 }
 
@@ -370,8 +371,9 @@ const std::string NullPtrVFGNode::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "NullPtrVFGNode ID: " << getId() << ",\n";
-    rawstr << "PAGNode ID: " << node->getId();
+    rawstr << "NullPtrVFGNode ID: " << getId();
+    rawstr << ",\nPAGNode ID: " << node->getId();
+    rawstr << ",\n(none)";
     return rawstr.str();
 }
 
