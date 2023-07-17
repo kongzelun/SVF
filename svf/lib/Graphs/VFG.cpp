@@ -29,6 +29,8 @@
 
 
 #include <Graphs/SVFGNode.h>
+#include "SVFIR/SVFVariables.h"
+#include "Util/Casting.h"
 #include "Util/Options.h"
 #include "Graphs/VFG.h"
 #include "SVFIR/SVFModule.h"
@@ -292,6 +294,10 @@ const std::string ActualParmVFGNode::toString() const
     rawstr << "ActualParmVFGNode ID: " << getId() << ",\n";
     rawstr << "CallSite[" << getCallSite()->getCallSite()->getSourceLoc() << "] ";
     rawstr << param->toString();
+    if (SVFUtil::dyn_cast<DummyValVar>(param))
+    {
+        rawstr << ",\n(none)";
+    }
     return rawstr.str();
 }
 
