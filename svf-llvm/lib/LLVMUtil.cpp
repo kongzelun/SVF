@@ -1041,11 +1041,11 @@ std::string SVFValue::toString() const
     llvm::raw_string_ostream rawstr(str);
     if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
     {
-        rawstr << "Function: " << fun->getName() << " ";
+        rawstr << "Function[" << fun->getName() << "]";
     }
     else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
     {
-        rawstr << "BasicBlock: " << bb->getName() << " ";
+        rawstr << "BasicBlock[" << bb->getName() << "]";
     }
     else if (const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(this))
     {
