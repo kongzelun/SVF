@@ -185,13 +185,13 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
 
     f << "------\n";
 
-    // Job finish and close file
     f.close();
     if (f.good())
     {
         outs() << "\n";
         return;
     }
+
 
 }
 
