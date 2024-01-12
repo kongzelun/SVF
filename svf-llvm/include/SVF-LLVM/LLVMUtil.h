@@ -119,7 +119,7 @@ inline bool isNullPtrSym(const Value* val)
 static inline Type* getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)
-    return pty->getElementType();
+    return pty->getPointerElementType();
 #else
     assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointers'");
     return pty->getNonOpaquePointerElementType();
@@ -128,35 +128,7 @@ static inline Type* getPtrElementType(const PointerType* pty)
 
 /// Get the reference type of heap/static object from an allocation site.
 //@{
-inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallBase* cs)
-{
-    const PointerType *refType = nullptr;
-    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
-    CallSite svfcs = SVFUtil::getSVFCallSite(svfcall);
-    // Case 1: heap object held by *argument, we should get its element type.
-    if (SVFUtil::isHeapAllocExtCallViaArg(svfcs))
-    {
-        int argPos = SVFUtil::getHeapAllocHoldingArgPosition(svfcs);
-        const Value* arg = cs->getArgOperand(argPos);
-        if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
-            refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
-    }
-    // Case 2: heap object held by return value.
-    else
-    {
-        assert(SVFUtil::isHeapAllocExtCallViaRet(svfcs)
-               && "Must be heap alloc via ret, or static allocation site");
-        refType = SVFUtil::dyn_cast<PointerType>(cs->getType());
-    }
-    assert(refType && "Allocated object must be held by a pointer-typed value.");
-    return refType;
-}
-
-inline const PointerType *getRefTypeOfHeapAllocOrStatic(const Instruction* inst)
-{
-    const CallBase* cs = getLLVMCallSite(inst);
-    return getRefTypeOfHeapAllocOrStatic(cs);
-}
+const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);
 //@}
 
 /// Return true if this value refers to a object
@@ -205,6 +177,9 @@ inline bool isArgOfUncalledFunction (const Value*  val)
 }
 //@}
 
+/// Return true if the function has a return instruction
+bool basicBlockHasRetInst(const BasicBlock* bb);
+
 /// Return true if the function has a return instruction reachable from function
 /// entry
 bool functionDoesNotRet(const Function* fun);
@@ -219,12 +194,9 @@ const Value* stripConstantCasts(const Value* val);
 /// Strip off the all casts
 const Value* stripAllCasts(const Value* val);
 
-/// Get the type of the heap allocation
-const Type* getTypeOfHeapAlloc(const Instruction* inst);
-
-/// Return the bitcast instruction which is val's only use site, otherwise
+/// Return the bitcast instruction right next to val, otherwise
 /// return nullptr
-const Value* getUniqueUseViaCastInst(const Value* val);
+const Value* getFirstUseViaCastInst(const Value* val);
 
 /// Return corresponding constant expression, otherwise return nullptr
 //@{
@@ -381,23 +353,6 @@ void removeUnusedGlobalVariables(Module* module);
 /// Delete unused functions, annotations and global variables in extapi.bc
 void removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> removedFuncList);
 
-inline u32_t SVFType2ByteSize(const SVFType* type)
-{
-    const llvm::Type* llvm_rhs = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(type);
-    u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(llvm_rhs->getPointerElementType());
-    u32_t llvm_elem_size = -1;
-    if (llvm_rhs->getPointerElementType()->isArrayTy() && llvm_rhs_size > 0)
-    {
-        size_t array_len = llvm_rhs->getPointerElementType()->getArrayNumElements();
-        llvm_elem_size = llvm_rhs_size / array_len;
-    }
-    else
-    {
-        llvm_elem_size =llvm_rhs_size;
-    }
-    return llvm_elem_size;
-}
-
 /// Get the corresponding Function based on its name
 inline const SVFFunction* getFunction(const std::string& name)
 {
@@ -458,7 +413,6 @@ void viewCFGOnly(const Function* fun);
 const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
 
 bool isValVtbl(const Value* val);
-bool isLoadVtblInst(const LoadInst* loadInst);
 bool isVirtualCallSite(const CallBase* cs);
 bool isConstructor(const Function* F);
 bool isDestructor(const Function* F);
@@ -490,7 +444,8 @@ const Argument* getConstructorThisPtr(const Function* fun);
 const Value* getVCallThisPtr(const CallBase* cs);
 const Value* getVCallVtblPtr(const CallBase* cs);
 s32_t getVCallIdx(const CallBase* cs);
-std::string getClassNameFromType(const Type* ty);
+bool classTyHasVTable(const StructType* ty);
+std::string getClassNameFromType(const StructType* ty);
 std::string getClassNameOfThisPtr(const CallBase* cs);
 std::string getFunNameOfVCallSite(const CallBase* cs);
 bool VCallInCtorOrDtor(const CallBase* cs);
@@ -507,13 +462,10 @@ bool VCallInCtorOrDtor(const CallBase* cs);
 bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
 
-template<typename T>
-std::string llvmToString(const T& val)
-{
-    std::string str;
-    llvm::raw_string_ostream(str) << val;
-    return str;
-}
+std::string dumpValue(const Value* val);
+
+std::string dumpType(const Type* type);
+
 
 /**
  * See more: https://github.com/SVF-tools/SVF/pull/1191

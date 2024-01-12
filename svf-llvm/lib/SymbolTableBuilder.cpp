@@ -234,12 +234,8 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
 void SymbolTableBuilder::collectSVFTypeInfo(const Value* val)
 {
-    (void)getOrAddSVFTypeInfo(val->getType());
-    if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
-    {
-        const Type* objtype = LLVMUtil::getPtrElementType(ptrType);
-        (void)getOrAddSVFTypeInfo(objtype);
-    }
+    Type *valType = val->getType();
+    (void)getOrAddSVFTypeInfo(valType);
     if(isGepConstantExpr(val) || SVFUtil::isa<GetElementPtrInst>(val))
     {
         for (bridge_gep_iterator
@@ -575,7 +571,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
  */
 ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
 {
-    const PointerType* refTy = nullptr;
+    const Type* objTy = nullptr;
 
     const Instruction* I = SVFUtil::dyn_cast<Instruction>(val);
 
@@ -583,15 +579,35 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     // (1) A heap/static object from a callsite
     if (I && isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I)))
     {
-        refTy = getRefTypeOfHeapAllocOrStatic(I);
+        objTy = inferTypeOfHeapObjOrStaticObj(I);
     }
     // (2) Other objects (e.g., alloca, global, etc.)
     else
-        refTy = SVFUtil::dyn_cast<PointerType>(val->getType());
-
-    if (refTy)
     {
-        Type* objTy = getPtrElementType(refTy);
+        if (SVFUtil::isa<PointerType>(val->getType()))
+        {
+            if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
+            {
+                // get the type of the allocated memory
+                // e.g., for `%retval = alloca i64, align 4`, we return i64
+                objTy = allocaInst->getAllocatedType();
+            }
+            else if (const GlobalValue *global = SVFUtil::dyn_cast<GlobalValue>(val))
+            {
+                // get the pointee type of the global pointer (begins with @ symbol in llvm)
+                objTy = global->getValueType();
+            }
+            else
+            {
+                SVFUtil::errs() << dumpValue(val) << "\n";
+                assert(false && "not an allocation or global?");
+            }
+        }
+    }
+
+    if (objTy)
+    {
+        (void) getOrAddSVFTypeInfo(objTy);
         ObjTypeInfo* typeInfo = new ObjTypeInfo(
             LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy),
             Options::MaxFieldLimit());
@@ -624,17 +640,11 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
  */
 void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-
-    const PointerType* refty = SVFUtil::dyn_cast<PointerType>(val->getType());
-    assert(refty && "this value should be a pointer type!");
-    Type* elemTy = getPtrElementType(refty);
-    bool isPtrObj = false;
+    const Type *elemTy = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(typeinfo->getType());
     // Find the inter nested array element
     while (const ArrayType* AT = SVFUtil::dyn_cast<ArrayType>(elemTy))
     {
         elemTy = AT->getElementType();
-        if (elemTy->isPointerTy())
-            isPtrObj = true;
         if (SVFUtil::isa<GlobalVariable>(val) &&
                 SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
                 SVFUtil::isa<ConstantArray>(
@@ -643,15 +653,8 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_ARRAY_OBJ);
     }
-    if (const StructType* ST = SVFUtil::dyn_cast<StructType>(elemTy))
+    if (SVFUtil::isa<StructType>(elemTy))
     {
-        const std::vector<const SVFType*>& flattenFields =
-            getOrAddSVFTypeInfo(ST)->getFlattenFieldTypes();
-        isPtrObj |= std::any_of(flattenFields.begin(), flattenFields.end(),
-                                [](const SVFType* ty)
-        {
-            return ty->isPointerTy();
-        });
         if (SVFUtil::isa<GlobalVariable>(val) &&
                 SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
                 SVFUtil::isa<ConstantStruct>(
@@ -660,32 +663,116 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_STRUCT_OBJ);
     }
-    else if (elemTy->isPointerTy())
-    {
-        isPtrObj = true;
-    }
+}
 
-    if(isPtrObj)
-        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
+/*!
+ * Analyze byte size of heap alloc function (e.g. malloc/calloc/...)
+ * 1) __attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
+     void* safe_malloc(unsigned long size).
+     Byte Size is the size(Arg0)
+   2)__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0*Arg1")))
+    char* safecalloc(int a, int b)
+    Byte Size is a(Arg0) * b(Arg1)
+   3)__attribute__((annotate("ALLOC_RET"), annotate("UNKNOWN")))
+    void* __sysv_signal(int a, void *b)
+    Byte Size is Unknown
+    If all required arg values are constant, byte Size is also constant,
+    otherwise return ByteSize 0
+ */
+u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
+{
+    if(const llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(val))
+    {
+        if (const llvm::Function* calledFunction =
+                    callInst->getCalledFunction())
+        {
+            const SVFFunction* svfFunction =
+                LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(
+                    calledFunction);
+            std::vector<const Value*> args;
+            // Heap alloc functions have annoation like "AllocSize:Arg1"
+            for (std::string annotation : svfFunction->getAnnotations())
+            {
+                if (annotation.find("AllocSize:") != std::string::npos)
+                {
+                    std::string allocSize = annotation.substr(10);
+                    std::stringstream ss(allocSize);
+                    std::string token;
+                    // Analyaze annotation string and attract Arg list
+                    while (std::getline(ss, token, '*'))
+                    {
+                        if (token.rfind("Arg", 0) == 0)
+                        {
+                            u32_t argIndex;
+                            std::istringstream(token.substr(3)) >> argIndex;
+                            if (argIndex < callInst->getNumOperands() - 1)
+                            {
+                                args.push_back(
+                                    callInst->getArgOperand(argIndex));
+                            }
+                        }
+                    }
+                }
+            }
+            u64_t product = 1;
+            if (args.size() > 0)
+            {
+                // for annotations like "AllocSize:Arg0*Arg1"
+                for (const llvm::Value* arg : args)
+                {
+                    if (const llvm::ConstantInt* constIntArg =
+                                llvm::dyn_cast<llvm::ConstantInt>(arg))
+                    {
+                        // Multiply the constant Value if all Args are const
+                        product *= constIntArg->getZExtValue();
+                    }
+                    else
+                    {
+                        // if Arg list has non-const value, return 0 to indicate it is non const byte size
+                        return 0;
+                    }
+                }
+                // If all the Args are const, return product
+                return product;
+            }
+            else
+            {
+                // for annotations like "AllocSize:UNKNOWN"
+                return 0;
+            }
+        }
+    }
+    // if it is not CallInst or CallInst has no CalledFunction, return 0 to indicate it is non const byte size
+    return 0;
 }
 
 /*!
  * Analyse types of heap and static objects
  */
-void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
+u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-    if(const Value* castUse = getUniqueUseViaCastInst(val))
+    if(const Value* castUse = getFirstUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeinfo->resetTypeForHeapStaticObj(
-            LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
         analyzeObjType(typeinfo,castUse);
+        const Type* objTy = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(typeinfo->getType());
+        if(SVFUtil::isa<ArrayType>(objTy))
+            return getNumOfElements(objTy);
+        else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objTy))
+        {
+            /// For an C++ class, it can have variant elements depending on the vtable size,
+            /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as PointerType at the cast site
+            if(classTyHasVTable(st))
+                typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
+            else
+                return getNumOfElements(objTy);
+        }
     }
     else
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
+    return typeinfo->getMaxFieldOffsetLimit();
 }
 
 /*!
@@ -693,17 +780,14 @@ void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* 
  */
 void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-    if(const Value* castUse = getUniqueUseViaCastInst(val))
+    if(const Value* castUse = getFirstUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STATIC_OBJ);
-        typeinfo->resetTypeForHeapStaticObj(
-            LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
         analyzeObjType(typeinfo,castUse);
     }
     else
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
 }
 
@@ -714,14 +798,20 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
                                       const Type* objTy)
 {
 
-    u32_t objSize = 1;
+    u32_t elemNum = 1;
+    // init byteSize = 0, If byteSize is changed in the following process,
+    // it means that ObjTypeInfo has a Constant Byte Size
+    u32_t byteSize = 0;
     // Global variable
+    // if val is Function Obj, byteSize is not set
     if (SVFUtil::isa<Function>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::FUNCTION_OBJ);
         analyzeObjType(typeinfo,val);
-        objSize = getObjSize(objTy);
+        elemNum = getNumOfElements(objTy);
     }
+    /// if val is AllocaInst, byteSize is Type's LLVM ByteSize * ArraySize
+    /// e.g. alloc i32, 10. byteSize is 4 (i32's size) * 10 (ArraySize) = 40
     else if(const AllocaInst* allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STACK_OBJ);
@@ -729,37 +819,53 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
         /// This is for `alloca <ty> <NumElements>`. For example, `alloca i64 3` allocates 3 i64 on the stack (objSize=3)
         /// In most cases, `NumElements` is not specified in the instruction, which means there is only one element (objSize=1).
         if(const ConstantInt* sz = SVFUtil::dyn_cast<ConstantInt>(allocaInst->getArraySize()))
-            objSize = sz->getZExtValue() * getObjSize(objTy);
+        {
+            elemNum = sz->getZExtValue() * getNumOfElements(objTy);
+            byteSize = sz->getZExtValue() * typeinfo->getType()->getByteSize();
+        }
+        /// if ArraySize is not constant, byteSize is not static determined.
         else
-            objSize = getObjSize(objTy);
+        {
+            elemNum = getNumOfElements(objTy);
+            byteSize = 0;
+        }
     }
+    /// if val is GlobalVar, byteSize is Type's LLVM ByteSize
+    /// All GlobalVariable must have constant size
     else if(SVFUtil::isa<GlobalVariable>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::GLOBVAR_OBJ);
         if(isConstantObjSym(val))
             typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
         analyzeObjType(typeinfo,val);
-        objSize = getObjSize(objTy);
+        elemNum = getNumOfElements(objTy);
+        byteSize = typeinfo->getType()->getByteSize();
     }
+    /// if val is heap alloc
     else if (SVFUtil::isa<Instruction>(val) &&
              isHeapAllocExtCall(
                  LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(
                      SVFUtil::cast<Instruction>(val))))
     {
-        analyzeHeapObjType(typeinfo,val);
-        // Heap object, label its field as infinite here
-        objSize = typeinfo->getMaxFieldOffsetLimit();
+        elemNum = analyzeHeapObjType(typeinfo,val);
+        // analyze heap alloc like (malloc/calloc/...), the alloc functions have
+        // annotation like "AllocSize:Arg1". Please refer to extapi.c.
+        // e.g. calloc(4, 10), annotation is "AllocSize:Arg0*Arg1",
+        // it means byteSize = 4 (Arg0) * 10 (Arg1) = 40
+        byteSize = analyzeHeapAllocByteSize(val);
     }
     else if(ArgInProgEntryFunction(val))
     {
         analyzeStaticObjType(typeinfo,val);
         // user input data, label its field as infinite here
-        objSize = typeinfo->getMaxFieldOffsetLimit();
+        elemNum = typeinfo->getMaxFieldOffsetLimit();
+        byteSize = typeinfo->getType()->getByteSize();
     }
     else if(LLVMUtil::isConstDataOrAggData(val))
     {
         typeinfo->setFlag(ObjTypeInfo::CONST_DATA);
-        objSize = getNumOfFlattenElements(val->getType());
+        elemNum = getNumOfFlattenElements(val->getType());
+        byteSize = typeinfo->getType()->getByteSize();
     }
     else
     {
@@ -768,14 +874,20 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
     }
 
     // Reset maxOffsetLimit if it is over the total fieldNum of this object
-    if(typeinfo->getMaxFieldOffsetLimit() > objSize)
-        typeinfo->setNumOfElements(objSize);
+    if(typeinfo->getMaxFieldOffsetLimit() > elemNum)
+        typeinfo->setNumOfElements(elemNum);
+
+    // set ByteSize. If ByteSize > 0, this typeinfo has constant type.
+    // If ByteSize == 0, this typeinfo has 1) zero byte 2) non-const byte size
+    // If ByteSize>MaxFieldLimit, set MaxFieldLimit to the byteSize;
+    byteSize = Options::MaxFieldLimit() > byteSize? byteSize: Options::MaxFieldLimit();
+    typeinfo->setByteSizeOfObj(byteSize);
 }
 
 /*!
  * Return size of this Object
  */
-u32_t SymbolTableBuilder::getObjSize(const Type* ety)
+u32_t SymbolTableBuilder::getNumOfElements(const Type* ety)
 {
     assert(ety && "type is null?");
     u32_t numOfFields = 1;

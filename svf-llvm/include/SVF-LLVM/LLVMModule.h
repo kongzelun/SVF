@@ -67,7 +67,7 @@ private:
     static bool preProcessed;
     SymbolTableInfo* symInfo;
     SVFModule* svfModule; ///< Borrowed from singleton SVFModule::svfModule
-    std::unique_ptr<LLVMContext> cxts;
+    std::unique_ptr<LLVMContext> owned_ctx;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
 
@@ -111,7 +111,10 @@ public:
         llvmModuleSet = nullptr;
     }
 
+    // Build an SVF module from a given LLVM Module instance (for use e.g. in a LLVM pass)
     static SVFModule* buildSVFModule(Module& mod);
+
+    // Build an SVF module from the bitcode files provided in `moduleNameVec`
     static SVFModule* buildSVFModule(const std::vector<std::string>& moduleNameVec);
 
     inline SVFModule* getSVFModule()
@@ -356,6 +359,7 @@ private:
     std::vector<const Function*> getLLVMGlobalFunctions(const GlobalVariable* global);
 
     void loadModules(const std::vector<std::string>& moduleNameVec);
+    // Loads ExtAPI bitcode file; uses LLVMContext made while loading module bitcode files or from Module
     void loadExtAPIModules();
     void addSVFMain();
 

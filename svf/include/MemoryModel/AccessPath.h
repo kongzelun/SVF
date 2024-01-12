@@ -61,16 +61,17 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef std::pair<const SVFVar*, const SVFType*> VarAndGepTypePair;
-    typedef std::vector<VarAndGepTypePair> OffsetVarAndGepTypePairs;
+    typedef std::pair<const SVFVar*, const SVFType*> IdxOperandPair;
+    typedef std::vector<IdxOperandPair> IdxOperandPairs;
 
     /// Constructor
-    AccessPath(APOffset o = 0) : fldIdx(o) {}
+    AccessPath(APOffset o = 0, const SVFType* srcTy = nullptr) : fldIdx(o), gepPointeeType(srcTy) {}
 
     /// Copy Constructor
     AccessPath(const AccessPath& ap)
         : fldIdx(ap.fldIdx),
-          offsetVarAndGepTypePairs(ap.getOffsetVarAndGepTypePairVec())
+          idxOperandPairs(ap.getIdxOperandPairVec()),
+          gepPointeeType(ap.gepSrcPointeeType())
     {
     }
 
@@ -83,19 +84,20 @@ public:
     inline const AccessPath& operator=(const AccessPath& rhs)
     {
         fldIdx = rhs.fldIdx;
-        offsetVarAndGepTypePairs = rhs.getOffsetVarAndGepTypePairVec();
+        idxOperandPairs = rhs.getIdxOperandPairVec();
+        gepPointeeType = rhs.gepPointeeType;
         return *this;
     }
     inline bool operator==(const AccessPath& rhs) const
     {
         return this->fldIdx == rhs.fldIdx &&
-               this->offsetVarAndGepTypePairs == rhs.offsetVarAndGepTypePairs;
+               this->idxOperandPairs == rhs.idxOperandPairs && this->gepPointeeType == rhs.gepPointeeType;
     }
     //@}
 
     /// Get methods
     //@{
-    inline APOffset getConstantFieldIdx() const
+    inline APOffset getConstantStructFldIdx() const
     {
         return fldIdx;
     }
@@ -103,19 +105,41 @@ public:
     {
         fldIdx = idx;
     }
-    inline const OffsetVarAndGepTypePairs& getOffsetVarAndGepTypePairVec() const
+    inline const IdxOperandPairs& getIdxOperandPairVec() const
     {
-        return offsetVarAndGepTypePairs;
+        return idxOperandPairs;
+    }
+    inline const SVFType* gepSrcPointeeType() const
+    {
+        return gepPointeeType;
     }
     //@}
 
-    /// Return accumulated constant byte offset given OffsetVarVec and elemByteSize
-    /// elemBytesize is the element byte size of an static alloc or heap alloc array
-    /// e.g. GepStmt* gep = **,
-    /// s32_t elemBytesize = LLVMUtil::SVFType2ByteSize(gep->getRHSVar()->getValue()->getType());
-    /// APOffset byteOffset = gep->accumulateConstantByteOffset(elemBytesize);
-    APOffset computeConstantByteOffset(u32_t elemBytesize) const;
+    /**
+     * Computes the total constant byte offset of an access path.
+     * This function iterates over the offset-variable-type pairs in reverse order,
+     * accumulating the total byte offset for constant offsets. For each pair,
+     * it retrieves the corresponding SVFValue and determines the type of offset
+     * (whether it's an array, pointer, or structure). If the offset corresponds
+     * to a structure, it further resolves the actual element type based on the
+     * offset value. It then multiplies the offset value by the size of the type
+     * to compute the byte offset. This is used to handle composite types where
+     * offsets are derived from the type's internal structure, such as arrays
+     * or structures with fields of various types and sizes. The function asserts
+     * that the access path must have a constant offset, and it is intended to be
+     * used when the offset is known to be constant at compile time.
+     *
+     * @return APOffset representing the computed total constant byte offset.
+     */
+    /// e.g. GepStmt* gep = [i32*4], 2
+    /// APOffset byteOffset = gep->accumulateConstantByteOffset();
+    /// byteOffset should be 8 since i32 is 4 bytes and index is 2.
+    APOffset computeConstantByteOffset() const;
     /// Return accumulated constant offset given OffsetVarVec
+    /// compard to computeConstantByteOffset, it is field offset rather than byte offset
+    /// e.g. GepStmt* gep = [i32*4], 2
+    /// APOffset byteOffset = gep->computeConstantOffset();
+    /// byteOffset should be 2 since it is field offset.
     APOffset computeConstantOffset() const;
 
     /// Return element number of a type.
@@ -133,6 +157,9 @@ public:
         return computeAllLocations().intersects(RHS.computeAllLocations());
     }
 
+    /// Return byte offset from the beginning of the structure to the field where it is located for struct type
+    u32_t getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const;
+
     /// Dump location set
     std::string dump() const;
 
@@ -145,7 +172,10 @@ private:
     NodeBS computeAllLocations() const;
 
     APOffset fldIdx;	///< Accumulated Constant Offsets
-    OffsetVarAndGepTypePairs offsetVarAndGepTypePairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>s
+    IdxOperandPairs idxOperandPairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>
+    const SVFType* gepPointeeType;   /// source element type in gep instruction,
+    /// e.g., %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %arrayidx, i32 0, i32 0
+    /// the source element type is %struct.MyStruct
 };
 
 } // End namespace SVF
@@ -155,9 +185,9 @@ template <> struct std::hash<SVF::AccessPath>
     size_t operator()(const SVF::AccessPath &ap) const
     {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
-        std::hash<SVF::AccessPath::OffsetVarAndGepTypePairs> v;
-        return h(std::make_pair(ap.getConstantFieldIdx(),
-                                v(ap.getOffsetVarAndGepTypePairVec())));
+        std::hash<SVF::AccessPath::IdxOperandPairs> v;
+        return h(std::make_pair(ap.getConstantStructFldIdx(),
+                                v(ap.getIdxOperandPairVec())));
     }
 };
 

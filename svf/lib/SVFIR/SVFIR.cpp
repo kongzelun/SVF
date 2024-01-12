@@ -633,7 +633,7 @@ void SVFIR::print()
             outs() << (*iter)->getSrcID() << " -- VariantGep --> "
                    << (*iter)->getDstID() << "\n";
         else
-            outs() << gep->getRHSVarID() << " -- Gep (" << gep->getConstantFieldIdx()
+            outs() << gep->getRHSVarID() << " -- Gep (" << gep->getConstantStructFldIdx()
                    << ") --> " << gep->getLHSVarID() << "\n";
     }
 
@@ -667,31 +667,6 @@ void SVFIR::initialiseCandidatePointers()
         if (isValidPointer(nodeId) == false)
             continue;
         candidatePointers.insert(nodeId);
-    }
-}
-/*!
- * Return true if FIObjVar can point to any object
- * Or a field GepObjVar can point to any object.
- */
-bool SVFIR::isNonPointerObj(NodeID id) const
-{
-    SVFVar* node = getGNode(id);
-    if (const FIObjVar* fiNode = SVFUtil::dyn_cast<FIObjVar>(node))
-    {
-        return (fiNode->getMemObj()->hasPtrObj()==false);
-    }
-    else if (const GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
-    {
-        return (gepNode->getMemObj()->isNonPtrFieldObj(gepNode->getConstantFieldIdx()));
-    }
-    else if (const DummyObjVar* dummyNode = SVFUtil::dyn_cast<DummyObjVar>(node))
-    {
-        return (dummyNode->getMemObj()->hasPtrObj()==false);
-    }
-    else
-    {
-        assert(false && "expecting a object node");
-        abort();
     }
 }
 /*

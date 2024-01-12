@@ -1,3 +1,4 @@
+#include <stddef.h>
 #define NULL ((void *)0)
 #define STATIC_OBJECT malloc(10)
 
@@ -14,541 +15,545 @@
         MEMCPY,       // memset() operations
         OVERWRITE,    // svf function overwrite app function
 */
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *malloc(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *fopen(const char *voidname, const char *mode)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *fopen64(const char *voidname, const char *mode)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *fdopen(int fd, const char *mode)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct dirent64 *readdir64(void *dirp)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *tmpvoid64(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0*Arg1")))
 void *calloc(unsigned long nitems, unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *zmalloc(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *gzdopen(int fd, const char *mode)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *iconv_open(const char *tocode, const char *fromcode)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *lalloc(unsigned long size, int a)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *lalloc_clear(unsigned long size, int a)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 long *nhalloc(unsigned int a, const char *b, int c)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *oballoc(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *popen(const char *command, const char *type)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *pthread_getspecific(const char *a, const char *b)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 struct dirent *readdir(void *dirp)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0*Arg1")))
 void* safe_calloc(unsigned nelem, unsigned elsize)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void* safe_malloc(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0*Arg1")))
 char* safecalloc(int a, int b)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 char* safemalloc(int a, int b)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *setmntent(const char *voidname, const char *type)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *shmat(int shmid, const void *shmaddr, int shmflg)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void* __sysv_signal(int a, void *b)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void (*signal(int sig, void (*func)(int)))(int)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *tempnam(const char *dir, const char *pfx)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *tmpvoid(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void* xcalloc(unsigned long size1, unsigned long size2)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void* xmalloc(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *_Znam(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *_Znaj(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *_Znwj(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *__cxa_allocate_exception(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg1")))
 void* aligned_alloc(unsigned long size1, unsigned long size2)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg1")))
 void* memalign(unsigned long size1, unsigned long size2)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *valloc(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg1")))
 void *mmap64(void *addr, unsigned long len, int prot, int flags, int fildes, long off)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *XSetLocaleModifiers(char *a)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char * __strdup(const char * string)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *crypt(const char *key, const char *salt)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *ctime(const void *timer)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *dlerror(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *dlopen(const char *voidname, int flags)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const char *gai_strerror(int errcode)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const char *gcry_cipher_algo_name(int errcode)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const char *svfgcry_md_algo_name_(int errcode)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *getenv(const char *name)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *getlogin(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *getpass(const char *prompt)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const char * gnutls_strerror(int error)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const char *gpg_strerror(unsigned int a)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 const char * gzerror(void* file, int * errnum)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *inet_ntoa(unsigned int in)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *initscr(void)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void* llvm_stacksave()
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg1")))
 void *mmap(void *addr, unsigned long len, int prot, int flags, int fildes, long off)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *newwin(int nlines, int ncols, int begin_y, int begin_x)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *nl_langinfo(int item)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *opendir(const char *name)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *sbrk(long increment)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *strdup(const char *s)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *strerror(int errnum)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *strsignal(int errnum)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *textdomain(const char * domainname)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *tgetstr(char *id, char **area)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *tigetstr(char *capname)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *tmpnam(char *s)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *ttyname(int fd)
 {
     return NULL;
 }
 
-__attribute__((annotate("REALLOC_RET")))
+__attribute__((annotate("REALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *getcwd(char *buf, unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("REALLOC_RET")))
+__attribute__((annotate("REALLOC_RET"), annotate("AllocSize:Arg1")))
 char *mem_realloc(void *ptr, unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("REALLOC_RET")))
+__attribute__((annotate("REALLOC_RET"), annotate("AllocSize:Arg1")))
 char *realloc(void *ptr, unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("REALLOC_RET")))
+__attribute__((annotate("REALLOC_RET"), annotate("AllocSize:Arg1")))
 void* safe_realloc(void *p, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("REALLOC_RET")))
+__attribute__((annotate("REALLOC_RET"), annotate("AllocSize:Arg1*Arg2")))
 void* saferealloc(void *p, unsigned long n1, unsigned long n2)
 {
     return NULL;
 }
 
-__attribute__((annotate("REALLOC_RET")))
+__attribute__((annotate("REALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void* safexrealloc()
 {
     return NULL;
 }
 
-__attribute__((annotate("REALLOC_RET")))
+
 char *strtok(char *str, const char *delim)
 {
-    return NULL;
+    return str;
 }
 
-__attribute__((annotate("REALLOC_RET")))
 char *strtok_r(char *str, const char *delim, char **saveptr)
 {
-    return NULL;
+    return str;
 }
 
-__attribute__((annotate("REALLOC_RET")))
+char* strsep(char** stringp, const char* delim)
+{
+    return *stringp;
+}
+
+__attribute__((annotate("REALLOC_RET"), annotate("AllocSize:Arg1")))
 void *xrealloc(void *ptr, unsigned long bytes)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *_Znwm(unsigned long size)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *_ZnwmRKSt9nothrow_t(unsigned long size, void *)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 void *_ZnamRKSt9nothrow_t(unsigned long size, void *)
 {
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_ARG0")))
+__attribute__((annotate("ALLOC_ARG0"), annotate("AllocSize:UNKNOWN")))
 int asprintf(char **restrict strp, const char *restrict fmt, ...)
 {
     return 0;
 }
 
-__attribute__((annotate("ALLOC_ARG0")))
+__attribute__((annotate("ALLOC_ARG0"), annotate("AllocSize:UNKNOWN")))
 int vasprintf(char **strp, const char *fmt, void* ap)
 {
     return 0;
 }
 
-__attribute__((annotate("ALLOC_ARG0")))
+__attribute__((annotate("ALLOC_ARG0"), annotate("AllocSize:UNKNOWN")))
 int db_create(void **dbp, void *dbenv, unsigned int flags)
 {
     return 0;
 }
 
-__attribute__((annotate("ALLOC_ARG0")))
+__attribute__((annotate("ALLOC_ARG0"), annotate("AllocSize:UNKNOWN")))
 int gnutls_pkcs12_bag_init(void *a)
 {
     return 0;
 }
 
-__attribute__((annotate("ALLOC_ARG0")))
+__attribute__((annotate("ALLOC_ARG0"), annotate("AllocSize:UNKNOWN")))
 int gnutls_pkcs12_init(void *a)
 {
     return 0;
 }
 
-__attribute__((annotate("ALLOC_ARG0")))
+__attribute__((annotate("ALLOC_ARG0"), annotate("AllocSize:UNKNOWN")))
 int gnutls_x509_crt_init(void *a)
 {
     return 0;
 }
 
-__attribute__((annotate("ALLOC_ARG0")))
+__attribute__((annotate("ALLOC_ARG0"), annotate("AllocSize:UNKNOWN")))
 int gnutls_x509_privkey_init(void *a)
 {
     return 0;
 }
 
-__attribute__((annotate("ALLOC_ARG0")))
+__attribute__((annotate("ALLOC_ARG0"), annotate("AllocSize:Arg2")))
 int posix_memalign(void **a, unsigned long b, unsigned long c)
 {
     return 0;
 }
 
-__attribute__((annotate("ALLOC_ARG1")))
+__attribute__((annotate("ALLOC_ARG1"), annotate("AllocSize:UNKNOWN")))
 int scandir(const char *restrict dirp, struct dirent ***restrict namelist, int (*filter)(const struct dirent *), int (*compar)(const struct dirent **, const struct dirent **))
 {
     return 0;
 }
 
-__attribute__((annotate("ALLOC_ARG2")))
+__attribute__((annotate("ALLOC_ARG2"), annotate("AllocSize:UNKNOWN")))
 int XmbTextPropertyToTextList(void *a, void *b, char ***c, int *d)
 {
     return 0;
@@ -608,45 +613,85 @@ char *__memset_chk(char * dest, int c, unsigned long destlen, int flag)
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("MEMSET")))
+char *wmemset(wchar_t * dst, wchar_t elem, int sz, int flag) {
+    return NULL;
+}
+
+
+__attribute__((annotate("STRCPY")))
 char * __strcpy_chk(char * dest, const char * src, unsigned long destlen)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("STRCAT")))
 char *__strcat_chk(char * dest, const char * src, unsigned long destlen)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("STRCAT")))
+wchar_t* __wcscat_chk(wchar_t * dest, const wchar_t * src)
+{
+    return NULL;
+}
+
+__attribute__((annotate("STRCPY")))
 char *stpcpy(char *restrict dst, const char *restrict src)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("STRCAT")))
 char *strcat(char *dest, const char *src)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("STRCAT")))
+char *wcscat(char *dest, const char *src)
+{
+    return NULL;
+}
+
+
+__attribute__((annotate("STRCPY")))
 char *strcpy(char *dest, const char *src)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY")))
+__attribute__((annotate("STRCAT")))
 char *strncat(char *dest, const char *src, unsigned long n)
 {
+    return NULL;
+}
+
+__attribute__((annotate("STRCAT")))
+wchar_t* wcsncat(wchar_t * dest, const wchar_t * src, int n) {
+    return NULL;
+}
+
+__attribute__((annotate("STRCAT")))
+char *__strncat_chk(char *dest, const char *src, unsigned long n)
+{
+    return NULL;
+}
+
+__attribute__((annotate("STRCAT")))
+wchar_t* __wcsncat_chk(wchar_t * dest, const wchar_t * src, int n) {
     return NULL;
 }
 
 __attribute__((annotate("MEMCPY")))
 char *strncpy(char *dest, const char *src, unsigned long n)
 {
+    return NULL;
+}
+
+__attribute__((annotate("STRCPY")))
+char *wcscpy(wchar_t* dest, const wchar_t* src) {
     return NULL;
 }
 
@@ -664,7 +709,7 @@ void* _ZNSt5arrayIPK1ALm2EE4backEv(void *arg)
     return ptr2;
 }
 
-__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 __attribute__((annotate("OVERWRITE")))
 void *SyGetmem(unsigned long size)
 {
@@ -686,7 +731,22 @@ char *fgets(char *str, int n, void *stream)
     return str;
 }
 
+char *fgets_unlocked(char *str, int n, void *stream)
+{
+    return str;
+}
+
+char* gets(char *str)
+{
+    return str;
+}
+
 void *memchr(const void *str, int c, unsigned long n)
+{
+    return (void *)str;
+}
+
+void *memrchr(const void *str, int c, unsigned long n)
 {
     return (void *)str;
 }
@@ -699,6 +759,26 @@ void * mremap(void * old_address, unsigned long old_size, unsigned long new_size
 char *strchr(const char *str, int c)
 {
     return (char *)str;
+}
+
+char *__strchrnull(const char *s, int c)
+{
+    return (char *)s;
+}
+
+char *strcasestr(const char *haystack, const char *needle)
+{
+    return (char *)haystack;
+}
+
+char* index(const char *s, int c)
+{
+    return (char *)s;
+}
+
+char* rindex(const char *s, int c)
+{
+    return (char *)s;
 }
 
 char *strerror_r(int errnum, char *buf, unsigned long buflen)
@@ -847,13 +927,31 @@ double strtod(const char *str, char **endptr)
     return 0.0;
 }
 
+double strtod_l(const char *str, char **endptr, void *loc)
+{
+    *endptr = (char *)str;
+    return 0.0;
+}
+
 float strtof(const char *nptr, char **endptr)
 {
     *endptr = (char *)nptr;
     return 0.0;
 }
 
+float strtof_l(const char *nptr, char **endptr, void *loc)
+{
+    *endptr = (char *)nptr;
+    return 0.0;
+}
+
 long int strtol(const char *str, char **endptr, int base)
+{
+    *endptr = (char *)str;
+    return 0;
+}
+
+long long strtoll(const char *str, char **endptr, int base)
 {
     *endptr = (char *)str;
     return 0;
@@ -869,6 +967,27 @@ unsigned long int strtoul(const char *str, char **endptr, int base)
 {
     *endptr = (char *)str;
     return 0;
+}
+
+unsigned long long strtoull(const char *str, char **endptr, int base)
+{
+    *endptr = (char *)str;
+    return 0;
+}
+
+char *gcvt(double x, int ndigit, char *buf)
+{
+    return buf;
+}
+
+void *memmem(const void *haystack, unsigned long haystacklen, const void *needle, unsigned long needlelen)
+{
+    return (void *)haystack;
+}
+
+char* ctime_r(const char *timer, char *buf)
+{
+    return buf;
 }
 
 int readdir_r(void *__restrict__dir, void *__restrict__entry, void **__restrict__result)
@@ -956,7 +1075,7 @@ char * bind_textdomain_codeset(const char * domainname, const char * codeset)
 
 char *ctermid(char *s)
 {
-    return STATIC_OBJECT;
+    return s;
 }
 
 char * dcgettext(const char * domainname, const char * msgid, int category)

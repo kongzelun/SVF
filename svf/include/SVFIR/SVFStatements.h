@@ -342,6 +342,7 @@ public:
     AddrStmt(SVFVar* s, SVFVar* d) : AssignStmt(s, d, SVFStmt::Addr) {}
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -491,9 +492,9 @@ public:
     {
         return ap;
     }
-    inline const AccessPath::OffsetVarAndGepTypePairs getOffsetVarAndGepTypePairVec() const
+    inline const AccessPath::IdxOperandPairs getOffsetVarAndGepTypePairVec() const
     {
-        return getAccessPath().getOffsetVarAndGepTypePairVec();
+        return getAccessPath().getIdxOperandPairVec();
     }
     /// Return TRUE if this is a constant location set.
     inline bool isConstantOffset() const
@@ -505,9 +506,9 @@ public:
     /// e.g. GepStmt* gep = **,
     /// s32_t elemBytesize = LLVMUtil::SVFType2ByteSize(gep->getRHSVar()->getValue()->getType());
     /// APOffset byteOffset = gep->accumulateConstantByteOffset(elemBytesize);
-    inline APOffset accumulateConstantByteOffset(u32_t elemBytesize) const
+    inline APOffset accumulateConstantByteOffset() const
     {
-        return getAccessPath().computeConstantByteOffset(elemBytesize);
+        return getAccessPath().computeConstantByteOffset();
     }
 
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
@@ -516,10 +517,10 @@ public:
         return getAccessPath().computeConstantOffset();
     }
     /// Field index of the gep statement if it access the field of a struct
-    inline APOffset getConstantFieldIdx() const
+    inline APOffset getConstantStructFldIdx() const
     {
         assert(isVariantFieldGep()==false && "Can't retrieve the AccessPath if using a variable field index (pointer arithmetic) for struct field access ");
-        return getAccessPath().getConstantFieldIdx();
+        return getAccessPath().getConstantStructFldIdx();
     }
     /// Gep statement with a variant field index (pointer arithmetic) for struct field access
     inline bool isVariantFieldGep() const

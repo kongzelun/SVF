@@ -438,6 +438,13 @@ public:
     /// Whether it is a black hole object
     bool isBlackHoleObj() const;
 
+    /// Get the byte size of this object
+    u32_t getByteSizeOfObj() const;
+
+    /// Check if byte size is a const value
+    bool isConstantByteSize() const;
+
+
     /// object attributes methods
     //@{
     bool isFunction() const;
@@ -453,8 +460,6 @@ public:
     bool isConstantArray() const;
     bool isConstDataOrConstGlobal() const;
     bool isConstDataOrAggData() const;
-    bool hasPtrObj() const;
-    bool isNonPtrFieldObj(const APOffset& apOffset) const;
     //@}
 
     /// Operator overloading
@@ -490,7 +495,6 @@ public:
         CONST_ARRAY_OBJ = 0x100,  // constant array
         CONST_GLOBAL_OBJ = 0x200,  // global constant object
         CONST_DATA = 0x400,  // constant object str e.g. 5, 10, 1.0
-        HASPTR_OBJ = 0x800		// the object stores a pointer address
     } MEMTYPE;
 
 private:
@@ -504,6 +508,9 @@ private:
     u32_t maxOffsetLimit;
     /// Size of the object or number of elements
     u32_t elemNum;
+
+    /// Byte size of object
+    u32_t byteSize;
 
     void resetTypeForHeapStaticObj(const SVFType* type);
 public:
@@ -545,6 +552,25 @@ public:
     inline u32_t getNumOfElements() const
     {
         return elemNum;
+    }
+
+    /// Get the byte size of this object
+    inline u32_t getByteSizeOfObj() const
+    {
+        assert(isConstantByteSize() && "This Obj's byte size is not constant.");
+        return byteSize;
+    }
+
+    /// Set the byte size of this object
+    inline void setByteSizeOfObj(u32_t size)
+    {
+        byteSize = size;
+    }
+
+    /// Check if byte size is a const value
+    inline bool isConstantByteSize() const
+    {
+        return byteSize != 0;
     }
 
     /// Flag for this object type
@@ -618,11 +644,6 @@ public:
     {
         return hasFlag(CONST_DATA);
     }
-    inline bool hasPtrObj()
-    {
-        return hasFlag(HASPTR_OBJ);
-    }
-    virtual bool isNonPtrFieldObj(const APOffset& apOffset);
     //@}
 };
 

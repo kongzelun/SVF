@@ -70,7 +70,6 @@ ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const SVFType* type)
     if(type && type->isPointerTy())
     {
         typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
     return typeInfo;
 }
@@ -258,10 +257,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
     }
     else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType>(type))
     {
-        u32_t eSize = getNumOfFlattenElements(pt->getPtrElementType());
-        outs() << "  {Type: " << *pt << "}\n"
-               << "\t [target size = " << eSize << "]\n"
-               << "\n";
+        outs() << *pt << "\n";
     }
     else if (const SVFFunctionType* fu =
                  SVFUtil::dyn_cast<SVFFunctionType>(type))
@@ -366,39 +362,6 @@ void SymbolTableInfo::dump()
 }
 
 /*!
- * Whether a location set is a pointer type or not
- */
-bool ObjTypeInfo::isNonPtrFieldObj(const APOffset& apOffset)
-{
-    if (hasPtrObj() == false)
-        return true;
-
-    const SVFType* ety = getType();
-
-    if (SVFUtil::isa<SVFStructType, SVFArrayType>(ety))
-    {
-        u32_t sz = 0;
-        if(Options::ModelArrays())
-            sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenElementTypes().size();
-        else
-            sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenFieldTypes().size();
-
-        if(sz <= (u32_t) apOffset)
-        {
-            writeWrnMsg("out of bound error when accessing the struct/array");
-            return false;
-        }
-
-        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, apOffset);
-        return (elemTy->isPointerTy() == false);
-    }
-    else
-    {
-        return (hasPtrObj() == false);
-    }
-}
-
-/*!
  * Set mem object to be field sensitive (up to maximum field limit)
  */
 void MemObj::setFieldSensitive()
@@ -428,6 +391,19 @@ u32_t MemObj::getNumOfElements() const
 {
     return typeInfo->getNumOfElements();
 }
+
+/// Get the byte size of this object
+u32_t MemObj::getByteSizeOfObj() const
+{
+    return typeInfo->getByteSizeOfObj();
+}
+
+/// Check if byte size is static determined
+bool MemObj::isConstantByteSize() const
+{
+    return typeInfo->isConstantByteSize();
+}
+
 
 /// Set the number of elements of this object
 void MemObj::setNumOfElements(u32_t num)
@@ -532,15 +508,6 @@ bool MemObj::isConstDataOrAggData() const
     return typeInfo->isConstDataOrAggData();
 }
 
-bool MemObj::hasPtrObj() const
-{
-    return typeInfo->hasPtrObj();
-}
-
-bool MemObj::isNonPtrFieldObj(const APOffset& apOffset) const
-{
-    return typeInfo->isNonPtrFieldObj(apOffset);
-}
 
 const std::string MemObj::toString() const
 {

@@ -73,7 +73,7 @@ bool LLVMModuleSet::preProcessed = false;
 
 LLVMModuleSet::LLVMModuleSet()
     : symInfo(SymbolTableInfo::SymbolInfo()),
-      svfModule(SVFModule::getSVFModule()), cxts(nullptr)
+      svfModule(SVFModule::getSVFModule())
 {
 }
 
@@ -83,8 +83,8 @@ SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 
     double startSVFModuleTime = SVFStat::getClk(true);
     SVFModule::getSVFModule()->setModuleIdentifier(mod.getModuleIdentifier());
-    mset->modules.emplace_back(mod);
-
+    mset->modules.emplace_back(mod);    // Populates `modules`; can get context via `this->getContext()`
+    mset->loadExtAPIModules();          // Uses context from module through `this->getContext()`
     mset->build();
     double endSVFModuleTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
@@ -100,8 +100,8 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 
     LLVMModuleSet* mset = getLLVMModuleSet();
 
-    mset->loadModules(moduleNameVec);
-    mset->loadExtAPIModules();
+    mset->loadModules(moduleNameVec);   // Populates `modules`; can get context via `this->getContext()`
+    mset->loadExtAPIModules();          // Uses context from first module through `this->getContext()`
 
     if (!moduleNameVec.empty())
     {
@@ -324,6 +324,7 @@ void LLVMModuleSet::initSVFFunction()
 
 void LLVMModuleSet::initSVFBasicBlock(const Function* func)
 {
+    SVFFunction *svfFun = getSVFFunction(func);
     for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
     {
         const BasicBlock* bb = &*bit;
@@ -338,6 +339,16 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             const SVFBasicBlock* svf_pred_bb = getSVFBasicBlock(*pred_it);
             svfbb->addPredBasicBlock(svf_pred_bb);
         }
+
+        /// set exit block: exit basic block must have no successors and have a return instruction
+        if (svfbb->getSuccessors().empty())
+        {
+            if (LLVMUtil::basicBlockHasRetInst(bb))
+            {
+                svfFun->setExitBlock(svfbb);
+            }
+        }
+
         for (BasicBlock::const_iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
         {
             const Instruction* inst = &*iit;
@@ -372,6 +383,10 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             LLVMUtil::getPrevInsts(inst, getSVFInstruction(inst)->getPredInstructions());
         }
     }
+    // For no return functions, we set the last block as exit BB
+    // This ensures that each function that has definition must have an exit BB
+    if(svfFun->exitBlock == nullptr && svfFun->hasBasicBlock()) svfFun->setExitBlock(
+            const_cast<SVFBasicBlock *>(svfFun->back()));
 }
 
 
@@ -511,9 +526,11 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         SVFModule::setPagFromTXT(Options::Graphtxt());
 
     //
-    // To avoid the following type bugs (t1 != t3) when parsing multiple modules,
-    // We should use only one LLVMContext object for multiple modules in the same thread.
-    // No such problem if only one module is processed by SVF.
+    // LLVMContext objects separate global LLVM settings (from which e.g. types are
+    // derived); multiple LLVMContext objects can coexist and each context can "own"
+    // multiple modules (modules can only have one context). Mixing contexts can lead
+    // to unintended inequalities, such as the following:
+    //
     // ------------------------------------------------------------------
     //    LLVMContext ctxa,ctxb;
     //    IntegerType * t1 = IntegerType::get(ctxa,32);
@@ -525,7 +542,16 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     //    assert(t1 != t3);
     // ------------------------------------------------------------------
     //
-    cxts = std::make_unique<LLVMContext>();
+    // When loading bytecode files, SVF will use the same LLVMContext object for all
+    // modules (i.e. the context owns all loaded modules). This applies to ExtAPI as
+    // well, which *must* be loaded using the same LLVMContext object. Hence, when
+    // loading modules from bitcode files, a new LLVMContext is created (using a
+    // `std::unique_ptr<LLVMContext>` type to ensure automatic garbage collection).
+    //
+    // This garbage collection should be avoided when building an SVF module from an LLVM
+    // module instance; see the comment(s) in `buildSVFModule` and `loadExtAPIModules()`
+
+    owned_ctx = std::make_unique<LLVMContext>();
 
     for (const std::string& moduleName : moduleNameVec)
     {
@@ -536,7 +562,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         }
 
         SMDiagnostic Err;
-        std::unique_ptr<Module> mod = parseIRFile(moduleName, Err, *cxts);
+        std::unique_ptr<Module> mod = parseIRFile(moduleName, Err, *owned_ctx);
         if (mod == nullptr)
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
@@ -550,6 +576,19 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 
 void LLVMModuleSet::loadExtAPIModules()
 {
+    // This function loads the ExtAPI bitcode file as an LLVM module. Note that it is important that
+    // the same LLVMContext object is used to load this bitcode file as is used by the other modules
+    // being analysed.
+    // When the modules are loaded from bitcode files (i.e. passing filenames to files containing
+    // LLVM IR to `buildSVFModule({file1.bc, file2.bc, ...})) the context is created while loading
+    // the modules in `loadModules()`, which populates this->modules and this->owned_modules.
+    // If, however, an LLVM Module object is passed to `buildSVFModule` (e.g. from an LLVM pass),
+    // the context should be retrieved from the module itself (note that the garbage collection from
+    // `std::unique_ptr<LLVMContext> LLVMModuleSet::owned_ctx` should be avoided in this case). This
+    // function populates only this->modules.
+    // In both cases, fetching the context from the main LLVM module (through `getContext`) works
+    assert(!empty() && "LLVMModuleSet contains no modules; cannot load ExtAPI module without LLVMContext!");
+
     // Load external API module (extapi.bc)
     if (!ExtAPI::getExtAPI()->getExtBcPath().empty())
     {
@@ -560,7 +599,7 @@ void LLVMModuleSet::loadExtAPIModules()
             abort();
         }
         SMDiagnostic Err;
-        std::unique_ptr<Module> mod = parseIRFile(extModuleName, Err, *cxts);
+        std::unique_ptr<Module> mod = parseIRFile(extModuleName, Err, getContext());
         if (mod == nullptr)
         {
             SVFUtil::errs() << "load external module: " << extModuleName << "failed!!\n\n";
@@ -967,6 +1006,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 // ExtDecl -> ExtDecl in Table 1
                 std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extfun);
                 ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
+                break;
             }
         }
     }
@@ -979,6 +1019,42 @@ void LLVMModuleSet::buildFunToFunMap()
         {
             if (appfunc->getName().str().compare(owfunc->getName().str()) == 0)
             {
+                Type* returnType1 = appfunc->getReturnType();
+                Type* returnType2 = owfunc->getReturnType();
+
+                // Check if the return types are compatible:
+                // (1) The types are exactly the same,
+                // (2) Both are pointer types, and at least one of them is a void*.
+                // Note that getPointerElementType() will be deprecated in the future versions of LLVM.
+                // Considering compatibility, avoid using getPointerElementType()->isIntegerTy(8) to determine if it is a void * type.
+                if (!(returnType1 == returnType2 || (returnType1->isPointerTy() && returnType2->isPointerTy())))
+                {
+                    continue;
+                }
+
+                if (appfunc->arg_size() != owfunc->arg_size())
+                    continue;
+
+                bool argMismatch = false;
+                Function::const_arg_iterator argIter1 = appfunc->arg_begin();
+                Function::const_arg_iterator argIter2 = owfunc->arg_begin();
+                while (argIter1 != appfunc->arg_end() && argIter2 != owfunc->arg_end())
+                {
+                    Type* argType1 = argIter1->getType();
+                    Type* argType2 = argIter2->getType();
+
+                    // Check if the parameters types are compatible: (1) The types are exactly the same, (2) Both are pointer types, and at least one of them is a void*.
+                    if (!(argType1 == argType2 || (argType1->isPointerTy() && argType2->isPointerTy())))
+                    {
+                        argMismatch = true;
+                        break;
+                    }
+                    argIter1++;
+                    argIter2++;
+                }
+                if (argMismatch)
+                    continue;
+
                 Function* fun = const_cast<Function*>(appfunc);
                 Module* mod = fun->getParent();
                 FunctionType* funType = fun->getFunctionType();
@@ -997,6 +1073,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 // ExtDecl -> ExtDecl in Table 1
                 std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(owfunc);
                 ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
+                break;
             }
         }
     }
@@ -1272,12 +1349,24 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     assert(LLVMType2SVFType.find(T) == LLVMType2SVFType.end() &&
            "SVFType has been added before");
 
+    // add SVFType's LLVM byte size iff T isSized(), otherwise byteSize is 0(default value)
+    u32_t byteSize = 0;
+    if (T->isSized())
+    {
+        const llvm::DataLayout &DL = LLVMModuleSet::getLLVMModuleSet()->
+                                     getMainLLVMModule()->getDataLayout();
+        Type *mut_T = const_cast<Type *>(T);
+        byteSize = DL.getTypeAllocSize(mut_T);
+    }
+
     SVFType* svftype;
-    if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
-        svftype = new SVFPointerType(getSVFType(LLVMUtil::getPtrElementType(pt)));
+    if (SVFUtil::isa<PointerType>(T))
+    {
+        svftype = new SVFPointerType(byteSize);
+    }
     else if (const IntegerType* intT = SVFUtil::dyn_cast<IntegerType>(T))
     {
-        auto svfIntT = new SVFIntegerType();
+        auto svfIntT = new SVFIntegerType(byteSize);
         unsigned signWidth = intT->getBitWidth();
         assert(signWidth < INT16_MAX && "Integer width too big");
         svfIntT->setSignAndWidth(intT->getSignBit() ? -signWidth : signWidth);
@@ -1287,14 +1376,14 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = new SVFFunctionType(getSVFType(ft->getReturnType()));
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {
-        auto svfst = new SVFStructType();
+        auto svfst = new SVFStructType(byteSize);
         if (st->hasName())
             svfst->setName(st->getName().str());
         svftype = svfst;
     }
     else if (const auto at = SVFUtil::dyn_cast<ArrayType>(T))
     {
-        auto svfat = new SVFArrayType();
+        auto svfat = new SVFArrayType(byteSize);
         svfat->setNumOfElement(at->getNumElements());
         svfat->setTypeOfElement(getSVFType(at->getElementType()));
         svftype = svfat;
@@ -1302,7 +1391,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else
     {
         std::string buffer;
-        auto ot = new SVFOtherType(T->isSingleValueType());
+        auto ot = new SVFOtherType(byteSize, T->isSingleValueType());
         llvm::raw_string_ostream(buffer) << *T;
         ot->setRepr(std::move(buffer));
         svftype = ot;
@@ -1310,6 +1399,15 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 
     symInfo->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
+    if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
+    {
+        //cast svftype to SVFPointerType
+        SVFPointerType* svfPtrType = SVFUtil::dyn_cast<SVFPointerType>(svftype);
+        assert(svfPtrType && "this is not SVFPointerType");
+        // TODO: getPtrElementType to be removed
+        svfPtrType->setPtrElementType(getSVFType(LLVMUtil::getPtrElementType(pt)));
+    }
+
     return svftype;
 }
 

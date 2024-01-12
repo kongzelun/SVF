@@ -282,11 +282,16 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
 
     bool isConst = true;
 
+    bool prevPtrOperand = false;
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi)
     {
         const Type* gepTy = *gi;
         const SVFType* svfGepTy = LLVMModuleSet::getLLVMModuleSet()->getSVFType(gepTy);
+
+        assert((prevPtrOperand && svfGepTy->isPointerTy()) == false &&
+               "Expect no more than one gep operand to be of a pointer type");
+        if(svfGepTy->isPointerTy()) prevPtrOperand = true;
         const Value* offsetVal = gi.getOperand();
         const SVFValue* offsetSvfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal);
         assert(gepTy != offsetVal->getType() && "iteration and operand have the same type?");
@@ -303,7 +308,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
                 continue;
             APOffset idx = op->getSExtValue();
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(arrTy), idx);
-            ap.setFldIdx(ap.getConstantFieldIdx() + offset);
+            ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
         {
@@ -311,15 +316,17 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
             //The actual index
             APOffset idx = op->getSExtValue();
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(ST), idx);
-            ap.setFldIdx(ap.getConstantFieldIdx() + offset);
+            ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
         }
         else if (gepTy->isSingleValueType())
         {
             // If it's a non-constant offset access
             // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
-            if(!op && gepTy->isPointerTy() && getPtrElementType(SVFUtil::dyn_cast<PointerType>(gepTy))->isSingleValueType())
+            if(!op && gepTy->isPointerTy() && gepOp->getSourceElementType()->isSingleValueType())
+            {
                 isConst = false;
+            }
 
             // The actual index
             //s32_t idx = op->getSExtValue();
@@ -345,7 +352,9 @@ void SVFIRBuilder::processCE(const Value* val)
             const Constant* opnd = gepce->getOperand(0);
             // handle recursive constant express case (gep (bitcast (gep X 1)) 1)
             processCE(opnd);
-            AccessPath ap;
+            auto &GEPOp = llvm::cast<llvm::GEPOperator>(*gepce);
+            Type *pType = GEPOp.getSourceElementType();
+            AccessPath ap(0, LLVMModuleSet::getLLVMModuleSet()->getSVFType(pType));
             bool constGep = computeGepOffset(gepce, ap);
             // must invoke pag methods here, otherwise it will be a dead recursion cycle
             const SVFValue* cval = getCurrentValue();
@@ -710,7 +719,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 
     NodeID src = getValueNode(inst.getPointerOperand());
 
-    AccessPath ap;
+    AccessPath ap(0, LLVMModuleSet::getLLVMModuleSet()->getSVFType(inst.getSourceElementType()));
     bool constGep = computeGepOffset(&inst, ap);
     addGepEdge(src, dst, ap, constGep);
 }
@@ -1099,7 +1108,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
             const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cb);
             if (SVFUtil::isHeapAllocExtCallViaRet(svfInst))
             {
-                if (const Value* bitCast = getUniqueUseViaCastInst(cb))
+                if (const Value* bitCast = getFirstUseViaCastInst(cb))
                     return bitCast;
             }
         }
