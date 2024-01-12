@@ -225,8 +225,8 @@ else
 fi
 BUILD_DIR="./${BUILD_TYPE}-build"
 
-rm -rf "${BUILD_DIR}"
-mkdir "${BUILD_DIR}"
+# rm -rf "${BUILD_DIR}"
+mkdir -p "${BUILD_DIR}"
 cmake -DCMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}"  \
     -DCMAKE_CXX_COMPILER=$LLVM_DIR/bin/clang++   \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON           \

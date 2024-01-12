@@ -9,7 +9,8 @@ echo "Setting up environment for SVF"
 ########
 
 # in a local installation $SVF_DIR is the directory containing setup.sh
-SVF_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1; pwd -P)"
+# SVF_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1; pwd -P)"
+SVF_DIR="$(cd -- "$(dirname "$0")" >/dev/null 2>&1; pwd -P)"
 export SVF_DIR
 echo "SVF_DIR=$SVF_DIR"
 
