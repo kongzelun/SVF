@@ -80,27 +80,27 @@ class GraphWriter
     // edge labels not equal to the empty string "".
     bool getEdgeSourceLabels(std::stringstream &O2, NodeRef Node)
     {
-        child_iterator EI = GTraits::child_begin(Node);
-        child_iterator EE = GTraits::child_end(Node);
+        // child_iterator EI = GTraits::child_begin(Node);
+        // child_iterator EE = GTraits::child_end(Node);
         bool hasEdgeSourceLabels = false;
 
-        for (unsigned i = 0; EI != EE && i != 64; ++EI, ++i)
-        {
-            std::string label = DTraits.getEdgeSourceLabel(Node, EI);
+        // for (unsigned i = 0; EI != EE && i != 64; ++EI, ++i)
+        // {
+        //     std::string label = DTraits.getEdgeSourceLabel(Node, EI);
 
-            if (label.empty())
-                continue;
+        //     if (label.empty())
+        //         continue;
 
-            hasEdgeSourceLabels = true;
+        //     hasEdgeSourceLabels = true;
 
-            if (i)
-                O2 << "|";
+        //     if (i)
+        //         O2 << "|";
 
-            O2 << "<s" << i << ">" << DOT::EscapeStr(label);
-        }
+        //     O2 << "<s" << i << ">" << DOT::EscapeStr(label);
+        // }
 
-        if (EI != EE && hasEdgeSourceLabels)
-            O2 << "|<s64>truncated...";
+        // if (EI != EE && hasEdgeSourceLabels)
+        //     O2 << "|<s64>truncated...";
 
         return hasEdgeSourceLabels;
     }
@@ -175,7 +175,8 @@ public:
 
         O << "\tNode" << static_cast<const void*>(Node) << " [shape=record,";
         if (!NodeAttributes.empty()) O << NodeAttributes << ",";
-        O << "label=\"{";
+        // O << "label=\"{";
+        O << "label=\"";
 
         if (!DTraits.renderGraphFromBottomUp())
         {
@@ -235,7 +236,8 @@ public:
             O << "}";
         }
 
-        O << "}\"];\n";   // Finish printing the "node" line
+        // O << "}\"];\n";   // Finish printing the "node" line
+        O << "\"];\n";   // Finish printing the "node" line
 
         // Output all of the edges now
         child_iterator EI = GTraits::child_begin(Node);
