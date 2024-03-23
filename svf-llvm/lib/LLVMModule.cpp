@@ -33,10 +33,12 @@
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/CppUtil.h"
 #include "SVF-LLVM/BreakConstantExpr.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "MSSA/SVFGBuilder.h"
 #include "llvm/Support/FileSystem.h"
+#include "SVF-LLVM/ObjTypeInference.h"
 
 using namespace std;
 using namespace SVF;
@@ -73,8 +75,19 @@ bool LLVMModuleSet::preProcessed = false;
 
 LLVMModuleSet::LLVMModuleSet()
     : symInfo(SymbolTableInfo::SymbolInfo()),
-      svfModule(SVFModule::getSVFModule())
+      svfModule(SVFModule::getSVFModule()), typeInference(new ObjTypeInference())
 {
+}
+
+LLVMModuleSet::~LLVMModuleSet()
+{
+    delete typeInference;
+    typeInference = nullptr;
+}
+
+ObjTypeInference* LLVMModuleSet::getTypeInference()
+{
+    return typeInference;
 }
 
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
@@ -151,7 +164,8 @@ void LLVMModuleSet::build()
 
 void LLVMModuleSet::createSVFDataStructure()
 {
-    getSVFType(IntegerType::getInt8Ty(getContext()));
+    SVFType::svfI8Ty = getSVFType(getTypeInference()->int8Type());
+    SVFType::svfPtrTy = getSVFType(getTypeInference()->ptrType());
     // Functions need to be retrieved in the order of insertion
     // candidateDefs is the vector for all used defined functions
     // candidateDecls is the vector for all used declared functions
@@ -259,7 +273,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             SVFInstruction* svfInst = nullptr;
             if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
             {
-                if (LLVMUtil::isVirtualCallSite(call))
+                if (cppUtil::isVirtualCallSite(call))
                     svfInst = new SVFVirtualCallInst(
                         getSVFType(call->getType()), svfBB,
                         call->getFunctionType()->isVarArg(),
@@ -349,9 +363,9 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 }
                 if(SVFVirtualCallInst* virtualCall = SVFUtil::dyn_cast<SVFVirtualCallInst>(svfcall))
                 {
-                    virtualCall->setVtablePtr(getSVFValue(LLVMUtil::getVCallVtblPtr(call)));
-                    virtualCall->setFunIdxInVtable(LLVMUtil::getVCallIdx(call));
-                    virtualCall->setFunNameOfVirtualCall(LLVMUtil::getFunNameOfVCallSite(call));
+                    virtualCall->setVtablePtr(getSVFValue(cppUtil::getVCallVtblPtr(call)));
+                    virtualCall->setFunIdxInVtable(cppUtil::getVCallIdx(call));
+                    virtualCall->setFunNameOfVirtualCall(cppUtil::getFunNameOfVCallSite(call));
                 }
                 for(u32_t i = 0; i < call->arg_size(); i++)
                 {
@@ -727,14 +741,14 @@ void LLVMModuleSet::addSVFMain()
         assert(mainMod && "Module with main function not found.");
         Module& M = *mainMod;
         // char **
-        Type* i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
+        Type* ptr = PointerType::getUnqual(M.getContext());
         Type* i32 = IntegerType::getInt32Ty(M.getContext());
         // define void @svf.main(i32, i8**, i8**)
 #if (LLVM_VERSION_MAJOR >= 9)
         FunctionCallee svfmainFn = M.getOrInsertFunction(
                                        SVF_MAIN_FUNC_NAME,
                                        Type::getVoidTy(M.getContext()),
-                                       i32,i8ptr2,i8ptr2
+                                       i32,ptr,ptr
                                    );
         Function* svfmain = SVFUtil::dyn_cast<Function>(svfmainFn.getCallee());
 #else
@@ -1282,13 +1296,6 @@ SVFType* LLVMModuleSet::getSVFType(const Type* T)
     SVFType* svfType = addSVFTypeInfo(T);
     StInfo* stinfo = collectTypeInfo(T);
     svfType->setTypeInfo(stinfo);
-    /// TODO: set the void* to every element for now (imprecise)
-    /// For example,
-    /// [getPointerTo(): char   ----> i8*]
-    /// [getPointerTo(): int    ----> i8*]
-    /// [getPointerTo(): struct ----> i8*]
-    PointerType* ptrTy = PointerType::getInt8PtrTy(getContext());
-    svfType->setPointerTo(SVFUtil::cast<SVFPointerType>(getSVFType(ptrTy)));
     return svfType;
 }
 
@@ -1329,8 +1336,8 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     assert(LLVMType2SVFType.find(T) == LLVMType2SVFType.end() &&
            "SVFType has been added before");
 
-    // add SVFType's LLVM byte size iff T isSized(), otherwise byteSize is 0(default value)
-    u32_t byteSize = 0;
+    // add SVFType's LLVM byte size iff T isSized(), otherwise byteSize is 1 (default value)
+    u32_t byteSize = 1;
     if (T->isSized())
     {
         const llvm::DataLayout &DL = LLVMModuleSet::getLLVMModuleSet()->
@@ -1371,7 +1378,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else
     {
         std::string buffer;
-        auto ot = new SVFOtherType(byteSize, T->isSingleValueType());
+        auto ot = new SVFOtherType(T->isSingleValueType(), byteSize);
         llvm::raw_string_ostream(buffer) << *T;
         ot->setRepr(std::move(buffer));
         svftype = ot;
@@ -1379,14 +1386,6 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 
     symInfo->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
-    if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
-    {
-        //cast svftype to SVFPointerType
-        SVFPointerType* svfPtrType = SVFUtil::dyn_cast<SVFPointerType>(svftype);
-        assert(svfPtrType && "this is not SVFPointerType");
-        // TODO: getPtrElementType to be removed
-        svfPtrType->setPtrElementType(getSVFType(LLVMUtil::getPtrElementType(pt)));
-    }
 
     return svftype;
 }

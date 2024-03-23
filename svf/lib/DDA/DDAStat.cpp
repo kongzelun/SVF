@@ -82,9 +82,6 @@ void DDAStat::initDefault()
     _AnaTimePerQuery = 0;
     _AnaTimeCyclePerQuery = 0;
     _TotalTimeOfQueries = 0;
-
-    _vmrssUsageBefore = _vmrssUsageAfter = 0;
-    _vmsizeUsageBefore = _vmsizeUsageAfter = 0;
 }
 
 SVFG* DDAStat::getSVFG() const
@@ -266,8 +263,8 @@ void DDAStat::performStat()
     PTNumStatMap["NumOfMustAA"] = _TotalNumOfMustAliases;
     PTNumStatMap["NumOfInfePath"] = _TotalNumOfInfeasiblePath;
     PTNumStatMap["NumOfStore"] = SVFIR::getPAG()->getPTASVFStmtSet(SVFStmt::Store).size();
-    PTNumStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
-    PTNumStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
+    timeStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
+    timeStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
 
     printStat();
 }

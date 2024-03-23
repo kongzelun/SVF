@@ -36,15 +36,25 @@
 using namespace SVF;
 using namespace std;
 
-PTAStat::PTAStat(PointerAnalysis* p) : SVFStat(), pta(p)
+PTAStat::PTAStat(PointerAnalysis* p) : SVFStat(),
+    pta(p),
+    _vmrssUsageBefore(0),
+    _vmrssUsageAfter(0),
+    _vmsizeUsageBefore(0),
+    _vmsizeUsageAfter(0)
 {
+    u32_t vmrss = 0;
+    u32_t vmsize = 0;
+    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
+    setMemUsageBefore(vmrss, vmsize);
 }
 
 void PTAStat::performStat()
 {
-    callgraphStat();
 
     SVFStat::performStat();
+
+    callgraphStat();
 
     SVFIR* pag = SVFIR::getPAG();
     for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
@@ -59,6 +69,13 @@ void PTAStat::performStat()
         }
     }
     PTNumStatMap["LocalVarInRecur"] = localVarInRecursion.count();
+
+    u32_t vmrss = 0;
+    u32_t vmsize = 0;
+    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
+    setMemUsageAfter(vmrss, vmsize);
+    timeStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
+    timeStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
 }
 
 void PTAStat::callgraphStat()
@@ -112,7 +129,16 @@ void PTAStat::callgraphStat()
     PTNumStatMap["TotalEdge"] = totalEdge;
     PTNumStatMap["CalRetPairInCycle"] = edgeInCycle;
 
-    SVFStat::printStat("CallGraph Stats");
+    if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::Andersen_BASE && pta->getAnalysisTy() <= PointerAnalysis::PTATY::Steensgaard_WPA)
+        SVFStat::printStat("CallGraph Stats (Andersen analysis)");
+    else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::FSDATAFLOW_WPA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::FSCS_WPA)
+        SVFStat::printStat("CallGraph Stats (Flow-sensitive analysis)");
+    else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::CFLFICI_WPA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::CFLFSCS_WPA)
+        SVFStat::printStat("CallGraph Stats (CFL-R analysis)");
+    else if(pta->getAnalysisTy() >= PointerAnalysis::PTATY::FieldS_DDA && pta->getAnalysisTy() <= PointerAnalysis::PTATY::Cxt_DDA)
+        SVFStat::printStat("CallGraph Stats (DDA analysis)");
+    else
+        SVFStat::printStat("CallGraph Stats");
 
     delete callgraphSCC;
 }

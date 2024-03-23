@@ -31,7 +31,6 @@
 #define INCLUDE_SVF_FE_LLVMMODULE_H_
 
 #include "SVF-LLVM/BasicTypes.h"
-#include "Util/CppUtil.h"
 #include "SVFIR/SVFValue.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/Options.h"
@@ -40,6 +39,7 @@ namespace SVF
 {
 
 class SymbolTableInfo;
+class ObjTypeInference;
 
 class LLVMModuleSet
 {
@@ -89,6 +89,7 @@ private:
     SVFValue2LLVMValueMap SVFValue2LLVMValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
+    ObjTypeInference* typeInference;
 
     /// Constructor
     LLVMModuleSet();
@@ -96,7 +97,7 @@ private:
     void build();
 
 public:
-    ~LLVMModuleSet() = default;
+    ~LLVMModuleSet();
 
     static inline LLVMModuleSet* getLLVMModuleSet()
     {
@@ -343,6 +344,8 @@ public:
     SVFType* getSVFType(const Type* T);
     /// Get LLVM Type
     const Type* getLLVMType(const SVFType* T) const;
+
+    ObjTypeInference* getTypeInference();
 
 private:
     /// Create SVFTypes

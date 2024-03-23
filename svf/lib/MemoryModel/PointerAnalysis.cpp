@@ -27,7 +27,6 @@
  *      Author: Yulei Sui
  */
 
-#include "Util/CppUtil.h"
 #include "Util/Options.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
@@ -46,7 +45,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace cppUtil;
 
 
 SVFIR* PointerAnalysis::pag = nullptr;
@@ -68,7 +66,7 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
  * Constructor
  */
 PointerAnalysis::PointerAnalysis(SVFIR* p, PTATY ty, bool alias_check) :
-    svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),chgraph(nullptr),typeSystem(nullptr)
+    svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),chgraph(nullptr)
 {
     pag = p;
     OnTheFlyIterBudgetForStat = Options::StatBudget();
