@@ -7,16 +7,15 @@ add_subdirectory(CFL)
 add_subdirectory(LLVM2SVF)
 add_subdirectory(DDFG)
 
-# Build SvfLLVM tools with C++ standard C++17
 set_target_properties(
     cfl dvf svf-ex llvm2svf mta saber wpa ddfg
     PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-include(GNUInstallDirs)
 install(
     TARGETS cfl dvf svf-ex llvm2svf mta saber wpa ddfg
+    EXPORT SVFTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
