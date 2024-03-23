@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.23)
 
 project(SVF
-  VERSION 2.7.1
+  VERSION 2.9
   DESCRIPTION "SVF is a static value-flow analysis tool for LLVM-based languages"
   HOMEPAGE_URL "https://github.com/SVF-tools/SVF"
   LANGUAGES C CXX
@@ -64,7 +64,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
 # By default, build SVF and its targets treating all compiler warnings as errors (except deprecations)
 add_compile_options(
