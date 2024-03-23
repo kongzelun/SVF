@@ -100,9 +100,11 @@ static inline Type* getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)
     return pty->getPointerElementType();
-#else
+#elif (LLVM_VERSION_MAJOR < 17)
     assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointers'");
     return pty->getNonOpaquePointerElementType();
+#else
+    assert(false && "llvm version 17+ only support opaque pointers!");
 #endif
 }
 
@@ -325,12 +327,11 @@ bool isIntrinsicFun(const Function* func);
 
 /// Get all called funcions in a parent function
 std::vector<const Function *> getCalledFunctions(const Function *F);
-std::vector<std::string> getFunAnnotations(const Function* fun);
-void removeFunAnnotations(std::vector<Function*>& removedFuncList);
+void removeFunAnnotations(Set<Function*>& removedFuncList);
 bool isUnusedGlobalVariable(const GlobalVariable& global);
 void removeUnusedGlobalVariables(Module* module);
 /// Delete unused functions, annotations and global variables in extapi.bc
-void removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> removedFuncList);
+void removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> removedFuncList);
 
 /// Get the corresponding Function based on its name
 const SVFFunction* getFunction(const std::string& name);

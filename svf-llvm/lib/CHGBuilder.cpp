@@ -685,13 +685,27 @@ const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
     }
     else
     {
-        string thisPtrClassName = cppUtil::getClassNameOfThisPtr(cs);
-        if (const CHNode* thisNode = chg->getNode(thisPtrClassName))
+        Set<string> thisPtrClassNames = getClassNameOfThisPtr(cs);
+
+        if(thisPtrClassNames.empty())
         {
-            const CHGraph::CHNodeSetTy& instAndDesces = getInstancesAndDescendants(thisPtrClassName);
-            chg->csToClassesMap[svfcall].insert(thisNode);
-            for (CHGraph::CHNodeSetTy::const_iterator it = instAndDesces.begin(), eit = instAndDesces.end(); it != eit; ++it)
-                chg->csToClassesMap[svfcall].insert(*it);
+            // if we cannot infer classname, conservatively push all class nodes
+            for (const auto &node: *chg)
+            {
+                chg->csToClassesMap[svfcall].insert(node.second);
+            }
+            return chg->csToClassesMap[svfcall];
+        }
+
+        for (const auto &thisPtrClassName: thisPtrClassNames)
+        {
+            if (const CHNode* thisNode = chg->getNode(thisPtrClassName))
+            {
+                const CHGraph::CHNodeSetTy& instAndDesces = getInstancesAndDescendants(thisPtrClassName);
+                chg->csToClassesMap[svfcall].insert(thisNode);
+                for (CHGraph::CHNodeSetTy::const_iterator it2 = instAndDesces.begin(), eit = instAndDesces.end(); it2 != eit; ++it2)
+                    chg->csToClassesMap[svfcall].insert(*it2);
+            }
         }
         return chg->csToClassesMap[svfcall];
     }
