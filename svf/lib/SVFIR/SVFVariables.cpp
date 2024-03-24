@@ -93,7 +93,7 @@ const std::string SVFVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "SVFVar ID: " << getId();
+    rawstr << "\"SVFVar\": \"" << getId() << "\"";
     return rawstr.str();
 }
 
@@ -106,11 +106,10 @@ const std::string ValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ValVar ID: " << getId();
+    rawstr << "\"ValVar\": \"" << getId() << "\"";
     if (Options::ShowSVFIRValue())
     {
-        rawstr << ",\n";
-        rawstr << value->toString();
+        rawstr << ",\n" << value->toString();
     }
     return rawstr.str();
 }
@@ -119,11 +118,10 @@ const std::string ObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "ObjVar ID: " << getId();
+    rawstr << "\"ObjVar\": \"" << getId() << "\"";
     if (Options::ShowSVFIRValue())
     {
-        rawstr << ",\n";
-        rawstr << value->toString();
+        rawstr << ",\n" << value->toString();
     }
     return rawstr.str();
 }
@@ -132,11 +130,10 @@ const std::string GepValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "GepValVar ID: " << getId() << " with offset_" + std::to_string(getConstantFieldIdx());
+    rawstr << "\"GepValVar\": \"" << getId() << " with offset_" + std::to_string(getConstantFieldIdx()) << "\"";
     if (Options::ShowSVFIRValue())
     {
-        rawstr << ",\n";
-        rawstr << value->toString();
+        rawstr << ",\n" << value->toString();
     }
     return rawstr.str();
 }
@@ -145,11 +142,10 @@ const std::string GepObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "GepObjVar ID: " << getId() << " with offset_" + std::to_string(apOffset);
+    rawstr << "\"GepObjVar\": \"" << getId() << " with offset_" + std::to_string(apOffset) << "\"";
     if (Options::ShowSVFIRValue())
     {
-        rawstr << ",\n";
-        rawstr << value->toString();
+        rawstr << ",\n" << value->toString();
     }
     return rawstr.str();
 }
@@ -158,11 +154,10 @@ const std::string FIObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "FIObjVar ID: " << getId() << " (base object)";
+    rawstr << "\"FIObjVar\": \"" << getId() << " (base object)\"";
     if (Options::ShowSVFIRValue())
     {
-        rawstr << ",\n";
-        rawstr << value->toString();
+        rawstr << ",\n" << value->toString();
     }
     return rawstr.str();
 }
@@ -171,7 +166,7 @@ const std::string RetPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "RetPN ID: " << getId() << " unique return node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
+    rawstr << "\"RetPN\": \"" << getId() << " unique return node for function " << SVFUtil::cast<SVFFunction>(value)->getName() << "\"";
     return rawstr.str();
 }
 
@@ -179,7 +174,7 @@ const std::string VarArgPN::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
+    rawstr << "\"VarArgPN\": \"" << getId() << " Var arg node for function " << SVFUtil::cast<SVFFunction>(value)->getName() << "\"";
     return rawstr.str();
 }
 
@@ -187,7 +182,7 @@ const std::string DummyValVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "DummyValVar ID: " << getId();
+    rawstr << "\"DummyValVar\": \"" << getId() << "\"";
     return rawstr.str();
 }
 
@@ -195,7 +190,7 @@ const std::string DummyObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "DummyObjVar ID: " << getId();
+    rawstr << "\"DummyObjVar\": \"" << getId() << "\"";
     return rawstr.str();
 }
 

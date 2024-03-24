@@ -661,11 +661,10 @@ u32_t LLVMUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
  */
 const std::string LLVMUtil::getSourceLoc(const Value* val )
 {
-    if(val==nullptr)  return "{ empty val }";
+    if(val==nullptr)  return "\"loc\": null";
 
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "{ ";
 
     if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
     {
@@ -676,7 +675,11 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                 if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII))
                 {
                     llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
-                    rawstr << "\"ln\": " << DIVar->getLine() << ", \"fl\": \"" << DIVar->getFilename().str() << "\"";
+                    rawstr << "\"line\": \"" << DIVar->getLine() << "\"";
+                    rawstr << ",\n";
+                    rawstr << "\"column\": \"\"";
+                    rawstr << ",\n";
+                    rawstr << "\"file\": \"" << DIVar->getFilename().str() << "\"";
                     break;
                 }
             }
@@ -698,25 +701,24 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                     File = inlineLoc->getFilename().str();
                 }
             }
-            rawstr << "\"ln\": " << Line << ", \"cl\": " << Column << ", \"fl\": \"" << File << "\"";
+            rawstr << "\"line\": \"" << Line << "\"";
+            rawstr << ",\n";
+            rawstr << "\"column\": \"" << Column << "\"";
+            rawstr << ",\n";
+            rawstr << "\"file\": \"" << File << "\"";
         }
     }
     else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val))
     {
-        if (argument->getArgNo()%10 == 1)
-            rawstr << argument->getArgNo() << "st";
-        else if (argument->getArgNo()%10 == 2)
-            rawstr << argument->getArgNo() << "nd";
-        else if (argument->getArgNo()%10 == 3)
-            rawstr << argument->getArgNo() << "rd";
-        else
-            rawstr << argument->getArgNo() << "th";
-        rawstr << " arg " << argument->getParent()->getName().str() << " "
-               << getSourceLocOfFunction(argument->getParent());
+        rawstr << "\"#Arg\": \"" << argument->getArgNo() << "\"";
+        rawstr << ",\n";
+        rawstr << "\"f\": \"" << argument->getParent()->getName().str() << "\"";
+        rawstr << ",\n";
+        rawstr << getSourceLocOfFunction(argument->getParent());
     }
     else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
-        rawstr << "Glob";
+        rawstr << "\"loc\": \"Glob\"";
         NamedMDNode* CU_Nodes = gvar->getParent()->getNamedMetadata("llvm.dbg.cu");
         if(CU_Nodes)
         {
@@ -729,7 +731,10 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
 
                     if(DGV->getName() == gvar->getName())
                     {
-                        rawstr << "\"ln\": " << DGV->getLine() << ", \"fl\": \"" << DGV->getFilename().str() << "\"";
+                        rawstr << ",\n";
+                        rawstr << "\"line\": \"" << DGV->getLine() << "\"";
+                        rawstr << ",\n";
+                        rawstr << "\"file\": \"" << DGV->getFilename().str() << "\"";
                     }
 
                 }
@@ -742,20 +747,24 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(val))
     {
-        rawstr << "\"basic block\": " << bb->getName().str() << ", \"location\": " << getSourceLoc(bb->getFirstNonPHI());
+        rawstr << "\"bb\": \"" << bb->getName().str() << "\"";
+        rawstr << ",\n";
+        rawstr << "\"loc\": \"" << getSourceLoc(bb->getFirstNonPHI()) << "\"";
     }
     else if(LLVMUtil::isConstDataOrAggData(val))
     {
-        rawstr << "constant data";
+        rawstr << "\"loc\": \"constant data\"";
     }
     else
     {
-        rawstr << "N/A";
+        rawstr << "\"loc\": null";
     }
-    rawstr << " }";
 
-    // if(rawstr.str()=="{  }")
-    //     return "";
+    if (rawstr.str().length() == 0)
+    {
+        rawstr << "\"loc\": null";
+    }
+
     return rawstr.str();
 }
 
@@ -774,7 +783,17 @@ const std::string LLVMUtil::getSourceLocOfFunction(const Function* F)
     if (llvm::DISubprogram *SP =  F->getSubprogram())
     {
         if (SP->describes(F))
-            rawstr << "\"ln\": " << SP->getLine() << ", \"file\": \"" << SP->getFilename().str() << "\"";
+        {
+            rawstr << "\"line\": \"" << SP->getLine() << "\"";
+            rawstr << ",\n";
+            rawstr << "\"file\": \"" << SP->getFilename().str() << "\"";
+        }
+    }
+    if (rawstr.str().length() == 0)
+    {
+            rawstr << "\"line\": null";
+            rawstr << ",\n";
+            rawstr << "\"file\": null";
     }
     return rawstr.str();
 }
@@ -918,32 +937,69 @@ std::string SVFValue::toString() const
     llvm::raw_string_ostream rawstr(str);
     if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
     {
-        rawstr << "Function[" << fun->getName() << "]";
+        rawstr << "\"ir\": \"\"";
+        rawstr << ",\n";
+        rawstr << "\"f\": \"" << fun->getName() << "\"";
+        rawstr << ",\n";
+        rawstr << "\"bb\": \"\"";
     }
     else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
     {
-        rawstr << "BasicBlock[" << bb->getName() << "]";
+        rawstr << "\"ir\": \"\"";
+        rawstr << ",\n";
+        rawstr << "\"f\": \"\"";
+        rawstr << ",\n";
+        rawstr << "\"bb\": \"" << bb->getName() << "\"";
     }
     else if (const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(this))
     {
         auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
         if (llvmVal)
         {
-            rawstr << *llvmVal;
-            rawstr << ", Function[" << inst->getFunction()->getName() << "], BasicBlock[" << inst->getParent()->getName() << "]";
+            std::string llvmValStr;
+            llvm::raw_string_ostream rawLlvmValStr(llvmValStr);
+            rawLlvmValStr << *llvmVal;
+            rawstr << "\"ir\": \"" << escapeForJson(rawLlvmValStr.str()) << "\"";
+            rawstr << ",\n";
+            rawstr << "\"f\": \"" << inst->getFunction()->getName() << "\"";
+            rawstr << ",\n";
+            rawstr << "\"bb\": \"" << inst->getParent()->getName() << "\"";
         }
         else
-            rawstr << " No llvmVal found";
+        {
+            rawstr << "\"ir\": \"\"";
+            rawstr << ",\n";
+            rawstr << "\"f\": \"\"";
+            rawstr << ",\n";
+            rawstr << "\"bb\": \"\"";
+        }
     }
     else
     {
         auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
         if (llvmVal)
-            rawstr << " " << *llvmVal << " ";
+        {
+            std::string llvmValStr;
+            llvm::raw_string_ostream rawLlvmValStr(llvmValStr);
+            rawLlvmValStr << *llvmVal;
+
+            rawstr << "\"ir\": \"" << escapeForJson(rawLlvmValStr.str()) << "\"";
+            rawstr << ",\n";
+            rawstr << "\"f\": \"\"";
+            rawstr << ",\n";
+            rawstr << "\"bb\": \"\"";
+        }
         else
-            rawstr << " No llvmVal found";
+        {
+            rawstr << "\"ir\": \"\"";
+            rawstr << ",\n";
+            rawstr << "\"f\": \"\"";
+            rawstr << ",\n";
+            rawstr << "\"bb\": \"\"";
+        }
     }
-    rawstr << ",\n" << this->getSourceLoc();
+    rawstr << ",\n";
+    rawstr << this->getSourceLoc();
     return rawstr.str();
 }
 

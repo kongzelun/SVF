@@ -229,6 +229,22 @@ protected:
     {
         ptrInUncalledFun = true;
     }
+    inline std::string escapeForJson(const std::string& input) const
+    {
+        std::string output;
+        for (char c : input) {
+            switch (c) {
+                case '\\': output += "\\\\"; break; // Escape backslash
+                case '\"': output += "\\\""; break; // Escape double quote
+                case '\n': output += "\\n"; break;  // Escape newline
+                case '\r': output += "\\r"; break;  // Escape carriage return
+                case '\t': output += "\\t"; break;  // Escape tab
+                // Add more cases as necessary for other control characters
+                default: output += c;
+            }
+        }
+        return output;
+    }
     ///@}
 public:
     SVFValue() = delete;

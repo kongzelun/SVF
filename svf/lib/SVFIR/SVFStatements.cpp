@@ -67,7 +67,7 @@ const std::string SVFStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "SVFStmt: [Var" << getDstID() << " <-- Var" << getSrcID() << "]";
+    rawstr << "\"SVFStmt\": \"Var" << getDstID() << "<--Var" << getSrcID() << "\"";
     return rawstr.str();
 }
 
@@ -75,7 +75,7 @@ const std::string AddrStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "AddrStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
+    rawstr << "\"AddrStmt\": \"Var" << getLHSVarID() << "<--Var" << getRHSVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -88,7 +88,7 @@ const std::string CopyStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "CopyStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
+    rawstr << "\"CopyStmt\": \"Var" << getLHSVarID() << "<--Var" << getRHSVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -101,9 +101,9 @@ const std::string PhiStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "PhiStmt: [Var" << getResID() << " <-- (";
+    rawstr << "\"PhiStmt\": \"Var" << getResID() << "<--(";
     for(u32_t i = 0; i < getOpVarNum(); i++)
-        rawstr << "[Var" << getOpVar(i)->getId() << ", ICFGNode" << getOpICFGNode(i)->getId() <<  "]";
+        rawstr << "[Var" << getOpVar(i)->getId() << ", ICFGNode" << getOpICFGNode(i)->getId() <<  "\"";
     rawstr << ")]";
     if (Options::ShowSVFIRValue())
     {
@@ -117,10 +117,10 @@ const std::string SelectStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "SelectStmt: (Condition Var" <<  getCondition()->getId() << ") [Var" << getResID() << " <-- (Var";
+    rawstr << "\"SelectStmt\": \"(Condition Var" <<  getCondition()->getId() << ")[Var" << getResID() << "<--(Var";
     for(const SVFVar* op : getOpndVars())
         rawstr << op->getId() << ",";
-    rawstr << ")]";
+    rawstr << ")\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -133,7 +133,7 @@ const std::string CmpStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "CmpStmt: [Var" << getResID() << " <-- (Var" << getOpVarID(0) << " predicate" << getPredicate() << " Var" << getOpVarID(1) << ")]";
+    rawstr << "\"CmpStmt\": \"Var" << getResID() << "<--(Var" << getOpVarID(0) << " predicate" << getPredicate() << " Var" << getOpVarID(1) << ")]";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -146,7 +146,7 @@ const std::string BinaryOPStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "BinaryOPStmt: [Var" << getResID() << " <-- (Var" << getOpVarID(0) << " opcode" << getOpcode() << " Var" << getOpVarID(1) << ")]";
+    rawstr << "\"BinaryOPStmt\": \"Var" << getResID() << "<--(Var" << getOpVarID(0) << " opcode" << getOpcode() << " Var" << getOpVarID(1) << ")]";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -159,7 +159,7 @@ const std::string UnaryOPStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "UnaryOPStmt: [Var" << getResID() << " <-- " << " opcode" << getOpcode() << " Var" << getOpVarID() << "]";
+    rawstr << "\"UnaryOPStmt\": \"Var" << getResID() << "<--" << " opcode" << getOpcode() << " Var" << getOpVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -173,12 +173,14 @@ const std::string BranchStmt::toString() const
     std::string str;
     std::stringstream rawstr(str);
     if(isConditional())
-        rawstr << "BranchStmt: [Condition Var" <<  getCondition()->getId() << "]";
+        rawstr << "\"BranchStmt\": \"Condition Var" <<  getCondition()->getId();
     else
-        rawstr << "BranchStmt: [" <<  "Unconditional branch" << "]";
+        rawstr << "\"BranchStmt\": \"" <<  "Unconditional branch";
 
     for(u32_t i = 0; i < getNumSuccessors(); i++)
-        rawstr << " Successor " << i << " ICFGNode" << getSuccessor(i)->getId() << "]";
+        rawstr << " Successor " << i << " ICFGNode" << getSuccessor(i)->getId();
+
+    rawstr << "\"";
 
     if (Options::ShowSVFIRValue())
     {
@@ -193,7 +195,7 @@ const std::string LoadStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "LoadStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
+    rawstr << "\"LoadStmt\": \"Var" << getLHSVarID() << "<--Var" << getRHSVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -206,7 +208,7 @@ const std::string StoreStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "StoreStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
+    rawstr << "\"StoreStmt\": \"Var" << getLHSVarID() << "<--Var" << getRHSVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -219,7 +221,7 @@ const std::string GepStmt::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "GepStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
+    rawstr << "\"GepStmt\": \"Var" << getLHSVarID() << "<--Var" << getRHSVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -232,7 +234,7 @@ const std::string CallPE::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "CallPE: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
+    rawstr << "\"CallPE\": \"Var" << getLHSVarID() << "<--Var" << getRHSVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -245,7 +247,7 @@ const std::string RetPE::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "RetPE: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
+    rawstr << "\"RetPE\": \"Var" << getLHSVarID() << "<--Var" << getRHSVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -258,7 +260,7 @@ const std::string TDForkPE::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "TDForkPE: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
+    rawstr << "\"TDForkPE\": \"Var" << getLHSVarID() << "<--Var" << getRHSVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
@@ -271,7 +273,7 @@ const std::string TDJoinPE::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "TDJoinPE: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]";
+    rawstr << "\"TDJoinPE\": \"Var" << getLHSVarID() << "<--Var" << getRHSVarID() << "\"";
     if (Options::ShowSVFIRValue())
     {
         rawstr << ",\n";
