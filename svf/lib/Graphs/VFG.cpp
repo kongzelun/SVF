@@ -542,7 +542,7 @@ void VFG::addVFGNodes()
     for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(), eit = pag->getCallSiteRets().end(); it !=eit; ++it)
     {
 
-        /// for external function we do not create acutalRet VFGNode
+        /// for external function we do not create actualRet VFGNode
         /// they are in the formal of AddrVFGNode if the external function returns an allocated memory
         /// if fun has body, it may also exist in isExtCall, e.g., xmalloc() in bzip2, spec2000.
         if(isInterestedPAGNode(it->second) == false || hasDef(it->second))
@@ -828,8 +828,8 @@ void VFG::connectDirectVFGEdges()
                     it!=eit; ++it)
             {
                 const CallICFGNode* cs = (*it)->getCallSite();
-                ActualParmVFGNode* acutalParm = getActualParmVFGNode((*it)->getRHSVar(),cs);
-                addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
+                ActualParmVFGNode* actualParm = getActualParmVFGNode((*it)->getRHSVar(),cs);
+                addInterEdgeFromAPToFP(actualParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
             }
         }
         else if(FormalRetVFGNode* calleeRet = SVFUtil::dyn_cast<FormalRetVFGNode>(node))
@@ -859,9 +859,9 @@ void VFG::connectDirectVFGEdges()
                     forks.end(); iter != eiter; ++iter)
         {
             TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
-            ActualParmVFGNode* acutalParm = getActualParmVFGNode(forkedge->getRHSVar(),forkedge->getCallSite());
+            ActualParmVFGNode* actualParm = getActualParmVFGNode(forkedge->getRHSVar(),forkedge->getCallSite());
             FormalParmVFGNode* formalParm = getFormalParmVFGNode(forkedge->getLHSVar());
-            addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
+            addInterEdgeFromAPToFP(actualParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
         }
         /// add join edge
         SVFStmt::SVFStmtSetTy& joins = getPAGEdgeSet(SVFStmt::ThreadJoin);

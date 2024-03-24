@@ -168,7 +168,7 @@ public:
 
     /// Compute the unique edgeFlag value from edge kind and second variable
     /// operand for MultiOpndStmt.
-    static inline GEdgeFlag makeEdgeFlagWithAddionalOpnd(GEdgeKind k,
+    static inline GEdgeFlag makeEdgeFlagWithAdditionalOpnd(GEdgeKind k,
             const SVFVar* var)
     {
         auto it_inserted = var2LabelMap.emplace(var, multiOpndLabelCounter);

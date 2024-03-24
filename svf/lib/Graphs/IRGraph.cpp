@@ -73,7 +73,7 @@ SVFStmt* IRGraph::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK ki
  */
 SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2)
 {
-    SVFStmt edge(src,op1,SVFStmt::makeEdgeFlagWithAddionalOpnd(kind,op2), false);
+    SVFStmt edge(src,op1,SVFStmt::makeEdgeFlagWithAdditionalOpnd(kind,op2), false);
     SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(&edge);
     if (it != KindToSVFStmtSetMap[kind].end())
     {

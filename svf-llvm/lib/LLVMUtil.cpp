@@ -477,7 +477,7 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
 
         Function* annotatedFunc = nullptr;
 
-        // Non-opague pointer, try to cast to ConstantExpr and check for BitCast
+        // Non-opaque pointer, try to cast to ConstantExpr and check for BitCast
         if (ConstantExpr* expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0)))
         {
             if (expr->getOpcode() == Instruction::BitCast)
@@ -486,7 +486,7 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
             }
         }
 
-        // Opague pointer, If the above method didn't work, try casting directly to Function
+        // Opaque pointer, If the above method didn't work, try casting directly to Function
         if (!annotatedFunc)
         {
             annotatedFunc = SVFUtil::dyn_cast<Function>(structAn->getOperand(0));
@@ -523,7 +523,7 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
     glob->eraseFromParent();
 }
 
-/// Get all called funcions in a parent function
+/// Get all called functions in a parent function
 std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
 {
     std::vector<const Function *> calledFunctions;
