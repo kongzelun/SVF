@@ -175,8 +175,7 @@ public:
 
         O << "\tNode" << static_cast<const void*>(Node) << " [shape=record,";
         if (!NodeAttributes.empty()) O << NodeAttributes << ",";
-        // O << "label=\"{";
-        O << "label=\"";
+        O << "label=\"{";
 
         if (!DTraits.renderGraphFromBottomUp())
         {
@@ -236,8 +235,7 @@ public:
             O << "}";
         }
 
-        // O << "}\"];\n";   // Finish printing the "node" line
-        O << "\"];\n";   // Finish printing the "node" line
+        O << "}\"];\n";   // Finish printing the "node" line
 
         // Output all of the edges now
         child_iterator EI = GTraits::child_begin(Node);
