@@ -661,7 +661,7 @@ u32_t LLVMUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
  */
 const std::string LLVMUtil::getSourceLoc(const Value* val )
 {
-    if(val==nullptr)  return "\"loc\": null";
+    if(val==nullptr)  return "\"loc\": \"\"";
 
     std::string str;
     std::stringstream rawstr(str);
@@ -718,7 +718,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
-        rawstr << "\"loc\": \"Glob\"";
+        rawstr << "\"loc\": \"global\"";
         NamedMDNode* CU_Nodes = gvar->getParent()->getNamedMetadata("llvm.dbg.cu");
         if(CU_Nodes)
         {
@@ -757,12 +757,12 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     else
     {
-        rawstr << "\"loc\": null";
+        rawstr << "\"loc\": \"\"";
     }
 
     if (rawstr.str().length() == 0)
     {
-        rawstr << "\"loc\": null";
+        rawstr << "\"loc\": \"\"";
     }
 
     return rawstr.str();
@@ -791,9 +791,9 @@ const std::string LLVMUtil::getSourceLocOfFunction(const Function* F)
     }
     if (rawstr.str().length() == 0)
     {
-            rawstr << "\"line\": null";
+            rawstr << "\"line\": \"\"";
             rawstr << ",\n";
-            rawstr << "\"file\": null";
+            rawstr << "\"file\": \"\"";
     }
     return rawstr.str();
 }
