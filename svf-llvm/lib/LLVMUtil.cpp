@@ -753,7 +753,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     else if(LLVMUtil::isConstDataOrAggData(val))
     {
-        rawstr << "\"loc\": \"constant data\"";
+        rawstr << "\"loc\": \"const\"";
     }
     else
     {
