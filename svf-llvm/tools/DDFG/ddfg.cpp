@@ -88,22 +88,24 @@ int main(int argc, char **argv)
     Andersen *ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     ander->disablePrintStat();
 
-    /// Call Graph
-    PTACallGraph *callgraph = ander->getPTACallGraph();
-    callgraph->dump("callgraph");
-
     /// ICFG
     ICFG *icfg = pag->getICFG();
     icfg->dump("icfg");
-
-    /// Value-Flow Graph (VFG)
-    VFG *vfg = new VFG(callgraph);
-    vfg->dump("vfg");
 
     /// Sparse value-flow graph (SVFG)
     SVFGBuilder svfBuilder(true);
     SVFG       *full_svfg = svfBuilder.buildFullSVFG(ander);
     full_svfg->dump("full_svfg");
+
+    full_svfg->updateCallGraph(ander);
+
+    /// Call Graph
+    PTACallGraph *callgraph = ander->getPTACallGraph();
+    callgraph->dump("callgraph");
+
+    /// Value-Flow Graph (VFG)
+    VFG *vfg = new VFG(callgraph);
+    vfg->dump("vfg");
 
     // clean up memory
     delete vfg;
