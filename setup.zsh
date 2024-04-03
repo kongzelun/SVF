@@ -9,8 +9,7 @@ echo "Setting up environment for SVF (zsh)"
 ########
 
 # in a local installation $SVF_DIR is the directory containing setup.sh
-SVF_DIR="$(cd -- "$(dirname "${(%):-%N}")" >/dev/null 2>&1; pwd -P)"
-export SVF_DIR
+export SVF_DIR="$(cd -- "$(dirname "${(%):-%N}")" >/dev/null 2>&1; pwd -P)"
 echo "SVF_DIR=$SVF_DIR"
 
 # Set LLVM_DIR and Z3_DIR to system-installed location
