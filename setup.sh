@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 echo "Setting up environment for SVF"
 
 
@@ -9,9 +7,15 @@ echo "Setting up environment for SVF"
 ########
 
 # in a local installation $SVF_DIR is the directory containing setup.sh
-export SVF_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1; pwd -P)"
-echo "SVF_DIR=$SVF_DIR"
+if [ -n "$BASH_VERSION" ]; then
+  export SVF_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1; pwd -P)"
+elif [ -n "$ZSH_VERSION" ]; then
+  export SVF_DIR="$(cd -- "$(dirname "${(%):-%x}")" >/dev/null 2>&1; pwd -P)"
+else
+  echo "Unsupported shell"
+fi
 
+echo "SVF_DIR=$SVF_DIR"
 # Set LLVM_DIR and Z3_DIR to system-installed location
 LLVM_DIR="/usr"
 Z3_DIR="/usr"
