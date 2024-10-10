@@ -8,7 +8,6 @@ Debug+Asserts/
 autoconf/
 tests/result/
 doxygen/
-.*
 !.config.in
 !.config.cmake.in
 !.gitignore
@@ -24,3 +23,5 @@ doxygen/
 *.svf
 cmake-build-debug/
 compile_commands.json
+
+.cache
