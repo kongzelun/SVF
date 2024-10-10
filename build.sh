@@ -218,6 +218,9 @@ echo "Z3_DIR=$Z3_DIR"
 ########
 # Build SVF
 ########
+# Install dependencies
+./install-dependencies.sh
+
 if [[ $1 =~ ^[Dd]ebug$ ]]; then
     BUILD_TYPE='Debug'
 else
